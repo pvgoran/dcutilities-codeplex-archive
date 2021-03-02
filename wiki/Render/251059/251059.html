@@ -1,0 +1,56 @@
+<div class="wikidoc"><h1>CollapsibleFieldset Tutorial</h1>This tutorial aims to illustrate the usage of the CollapsibleFieldset HtmlHelper that is found in the DigitallyCreated.Utilities.Mvc assembly. The CollapsibleFieldset extension method can be found in the EyeCandyHtmlHelpers class. The tutorial assumes you know C#, JavaScript, ASP.NET MVC, and jQuery.<br /><br />The CollapsibleFieldset is a fieldset that automatically collapses and expands when the user clicks the fieldset legend. It&#39;s great to use when you&#39;ve got some controls or form elements that are not always needed immediately by the user and you&#39;d like them hidden.<br /><br /><img src="http://download-codeplex.sec.s-msft.com/Download?ProjectName=dcutilities&DownloadId=112099" alt="CollapsibleFieldset.gif" title="CollapsibleFieldset.gif" /><br />(See a live demonstration on <a href="http://www.digitallycreated.net/Programs/DCUtilities/Demonstrations">this page</a>)<br /><br />Using a collapsible fieldset is very easy and familiar as it functions in a similar fashion to MVC&#39;s BeginForm HtmlHelper. Here&#39;s a small demonstration:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="background-color:Yellow;">&lt;%</span> <span style="color:Blue;">using</span> (Html.CollapsibleFieldset(<span style="color:#A31515;">&quot;Filter Settings&quot;</span>, <span style="color:Blue;">true</span>)) { <span style="background-color:Yellow;">%&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">table</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;LayoutTable&quot;</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;</span><span style="color:#A31515;">label</span> <span style="color:Red;">for</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;FirstFilterSetting&quot;</span><span style="color:Blue;">&gt;</span>First Filter Setting:<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">label</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+                    <span style="background-color:Yellow;">&lt;%=</span> Html.TextBox(<span style="color:#A31515;">&quot;FirstFilterSetting&quot;</span>) <span style="background-color:Yellow;">%&gt;</span>
+                <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">table</span><span style="color:Blue;">&gt;</span>
+<span style="background-color:Yellow;">&lt;%</span> } <span style="background-color:Yellow;">%&gt;</span>
+</pre></div><br />As you can see in the above example, you use CollapsibleFieldset inside a using block. The first parameter is the text to go in the fieldset&#39;s legend. The second is whether or not the fieldset should be collapsed by default.<br /><br />Here&#39;s the XHTML and JavaScript that is emitted (cleaned up a little with some indenting):<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">script</span> <span style="color:Red;">type</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;text/javascript&quot;</span><span style="color:Blue;">&gt;</span>
+    jQuery(<span style="color:Blue;">function</span>()
+    {
+        <span style="color:Blue;">var</span> func = <span style="color:Blue;">function</span>(speed)
+        {
+            <span style="color:Blue;">var</span> legend = jQuery(<span style="color:#A31515;">&quot;#GUID7c1c80ababaf48e69c6a87a03559ecf5 legend&quot;</span>);
+            legend.parent().children().not(<span style="color:#A31515;">&quot;legend&quot;</span>).toggle(speed);
+
+            <span style="color:Blue;">if</span> (legend.hasClass(<span style="color:#A31515;">&quot;Collapse&quot;</span>))
+            {
+                legend.removeClass(<span style="color:#A31515;">&quot;Collapse&quot;</span>);
+                legend.addClass(<span style="color:#A31515;">&quot;Expand&quot;</span>);
+            }
+            <span style="color:Blue;">else</span>
+            {
+                legend.removeClass(<span style="color:#A31515;">&quot;Expand&quot;</span>);
+                legend.addClass(<span style="color:#A31515;">&quot;Collapse&quot;</span>);
+            }
+        }
+
+        func(0);
+
+        jQuery(<span style="color:#A31515;">&quot;#GUID7c1c80ababaf48e69c6a87a03559ecf5 legend&quot;</span>).click(<span style="color:Blue;">function</span>() { func(<span style="color:#A31515;">&quot;fast&quot;</span>); });
+    });
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">script</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">fieldset</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Collapsible&quot;</span> <span style="color:Red;">id</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;GUID7c1c80ababaf48e69c6a87a03559ecf5&quot;</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">legend</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Collapse&quot;</span><span style="color:Blue;">&gt;</span><span style="color:Blue;">&lt;</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span>Filter Settings<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span><span style="color:Blue;">&lt;/</span><span style="color:#A31515;">legend</span><span style="color:Blue;">&gt;</span>
+        
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">table</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;LayoutTable&quot;</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;</span><span style="color:#A31515;">label</span> <span style="color:Red;">for</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;FirstFilterSetting&quot;</span><span style="color:Blue;">&gt;</span>First Filter Setting:<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">label</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;</span><span style="color:#A31515;">input</span> <span style="color:Red;">id</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;FirstFilterSetting&quot;</span> <span style="color:Red;">name</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;FirstFilterSetting&quot;</span> <span style="color:Red;">type</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;text&quot; value=&quot;&quot;</span> <span style="color:Blue;">/&gt;</span>
+            <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">table</span><span style="color:Blue;">&gt;</span>
+
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">fieldset</span><span style="color:Blue;">&gt;</span>
+</pre></div><br />The GUID-based ID on the fieldset is randomly generated every time, so <i>do not</i> rely on it being the same. As you can see the fieldset is unstyled, so you can use CSS to style it in such a way that it is evident to the user that it is collapsible. The legend can have one of two classes, &quot;Expand&quot; or &quot;Collapse&quot;. It will be &quot;Expand&quot; when the fieldset is collapsed, and &quot;Collapse&quot; when the fieldset is expanded. <br />You&#39;re welcome to borrow the styles and icons used on the <a href="http://www.digitallycreated.net/Programs/DCUtilities/Demonstrations">demonstration page</a>.</div><div class="ClearBoth"></div>

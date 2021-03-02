@@ -1,0 +1,98 @@
+[
+  {
+    "Id": "0",
+    "Name": "DigitallyCreated Utilities v1.0.0",
+    "DevelopmentStatus": "Stable",
+    "Description": "This release is the v1.0.0 version of DigitallyCreated Utilities.\n\n!! Binary Distribution\n\nThe binary distribution contains the following:\n* Compiled binaries\n* XML documentation\n* API documentation in CHM format\n\nYou need not use all of DigitallyCreated Utilities in your project. You can reference only the assemblies that contain the parts you want. Here are the dependencies:\n* *Bcl requires:*\n** .NET Framework 3.5 SP1\n* *Concurrency requires:*\n** .NET Framework 3.5 SP1\n* *ErrorReporting requires:*\n** .NET Framework 3.5 SP1\n* *Linq requires:*\n** .NET Framework 3.5 SP1\n* *Mvc requires:*\n** .NET Framework 3.5 SP1\n** Linq\n** System.Web.Mvc (v1)\n** jQuery (v1.3.2)\n* *Unity requires:*\n** .NET Framework 3.5 SP1\n** Concurrency\n** Unity Application Block (v1.2)\n\n!! Source Distribution\n\nThe source distribution contains the source code for this version. The following tools are used in its development:\n* Visual Studio 2008 SP1\n* ASP.NET MVC v1\n* Unity Application Block v1.2\n* [Sandcastle Help File Builder|http://www.codeplex.com/SHFB]\n\n!! Version History\n!!! v1.0.0\n* Added Bcl library\n* Added Concurrency library\n* Added ErrorReporting library\n* Added Unity library\n* Linq library:\n** Added CompiledQueryReplicator\n** Added EfUtil.ClearNonScalarProperties\n** Added MatchUp and Federator LINQ methods\n** Enhanced Sorter with XML serialisability\n* Mvc library:\n** Added CheckboxStandard HtmlHelper and BoolBinder\n** Added TempInfoBox HtmlHelper\n** Added CollapisbleFieldset HtmlHelper\n** Added Gravatar HtmlHelper\n** Added EncodeAndInsertBrsAndLinks Tutorial\n** Added IncomingRequestRouteConstraint\n** Added improved JsonResult\n** Added Permanently Redirect ActionResults\n** Added RouteHelpers (RouteToCurrentPage, Fluent syntax modification of RouteValueDictionary, MapPhysicalToVirtualPath, IsCurrentUserAuthorizedForRoute)\n!!! v0.2.0\n* Added EfUtil.SetModified which lets you set a single property on an entity as modified in a strongly typed manner\n!!! v0.1.0\n* Initial version",
+    "ReleasedDatge": "0001-01-01T00:00:00",
+    "ModifiedDate": "2010-05-25T20:35:34.56-07:00",
+    "Files": [
+      {
+        "Id": "b03cfdab-f81a-4510-8d76-18d44c4705e8",
+        "FileName": "DigitallyCreated Utilities v1.0.0.zip",
+        "Url": "./0/b03cfdab-f81a-4510-8d76-18d44c4705e8",
+        "Type": "Application",
+        "UploadDate": "2010-03-24T06:00:57.143-07:00"
+      },
+      {
+        "Id": "c2e90c12-f0a4-45ff-8843-e02b1c5f296c",
+        "FileName": "DigitallyCreated Utilities v1.0.0 Source Code.zip",
+        "Url": "./0/c2e90c12-f0a4-45ff-8843-e02b1c5f296c",
+        "Type": "Source Code",
+        "UploadDate": "2010-03-24T06:00:57.253-07:00"
+      }
+    ]
+  },
+  {
+    "Id": "1",
+    "Name": "DigitallyCreated Utilities v0.2.0",
+    "DevelopmentStatus": "Beta",
+    "Description": "This release is the v0.2.0 version of DigitallyCreated Utilities.\n\n!! Binary Distribution\n\nThe binary distribution contains the following:\n* Compiled binaries\n* XML documentation\n* API documentation in CHM format\n\nIf you only want to use the LINQ utilities, you need not use the {{.Mvc}} assembly. However, if you need to use the MVC utilities, you must also include the {{.Linq}} assembly.\n\n!! Source Distribution\n\nThe source distribution contains the source code for this version. The following tools are used in its development:\n* Visual Studio 2008 SP1\n* ASP.NET MVC v1\n* [Sandcastle Help File Builder|http://www.codeplex.com/SHFB]\n\n!! Version History\n!!! v0.2.0\n* Added EfUtil.SetModified which lets you set a single property on an entity as modified in a strongly typed manner\n!!! v0.1.0\n* Initial version",
+    "ReleasedDatge": "0001-01-01T00:00:00",
+    "ModifiedDate": "2010-05-25T20:36:20.33-07:00",
+    "Files": [
+      {
+        "Id": "98034164-75cb-42b9-a9be-612c762de131",
+        "FileName": "DigitallyCreated Utilities v0.2.0.zip",
+        "Url": "./1/98034164-75cb-42b9-a9be-612c762de131",
+        "Type": "Application",
+        "UploadDate": "2009-08-13T20:31:47.55-07:00"
+      },
+      {
+        "Id": "92218d4c-b146-425e-bb42-d7aaea5f9819",
+        "FileName": "DigitallyCreated Utilities v0.2.0 Source Code.zip",
+        "Url": "./1/92218d4c-b146-425e-bb42-d7aaea5f9819",
+        "Type": "Source Code",
+        "UploadDate": "2009-08-13T20:31:47.707-07:00"
+      }
+    ]
+  },
+  {
+    "Id": "2",
+    "Name": "DigitallyCreated Utilities v0.1.0",
+    "DevelopmentStatus": "Beta",
+    "Description": "This release is the v0.1.0 version of DigitallyCreated Utilities.\n\n!! Binary Distribution\n\nThe binary distribution contains the following:\n* Compiled binaries\n* XML documentation\n* API documentation in CHM format\n\nIf you only want to use the LINQ utilities, you need not use the {{.Mvc}} assembly. However, if you need to use the MVC utilities, you must also include the {{.Linq}} assembly.\n\n!! Source Distribution\n\nThe source distribution contains the source code for this version. The following tools are used in its development:\n* Visual Studio 2008 SP1\n* ASP.NET MVC v1\n* [Sandcastle Help File Builder|http://www.codeplex.com/SHFB]",
+    "ReleasedDatge": "0001-01-01T00:00:00",
+    "ModifiedDate": "2010-05-25T20:36:52.973-07:00",
+    "Files": [
+      {
+        "Id": "1d737d70-2bfb-4f77-bf89-ee083d83d518",
+        "FileName": "DigitallyCreated Utilities v0.1.0.zip",
+        "Url": "./2/1d737d70-2bfb-4f77-bf89-ee083d83d518",
+        "Type": "Application",
+        "UploadDate": "2009-08-06T04:33:59.71-07:00"
+      },
+      {
+        "Id": "60197799-e70b-4fe9-bc24-fec90afc538e",
+        "FileName": "DigitallyCreated Utilities v0.1.0 Source Code.zip",
+        "Url": "./2/60197799-e70b-4fe9-bc24-fec90afc538e",
+        "Type": "Source Code",
+        "UploadDate": "2009-08-06T04:34:32.693-07:00"
+      }
+    ]
+  },
+  {
+    "Id": "3",
+    "Name": "DigitallyCreated Utilities v1.0.1",
+    "DevelopmentStatus": "Stable",
+    "Description": "This release is the v1.0.1 version of DigitallyCreated Utilities. This update is highly recommended for all users of v1.0.0 as it fixes a critical bug in the Unity library.\n\n!! Binary Distribution\n\nThe binary distribution contains the following:\n* Compiled binaries\n* XML documentation\n* API documentation in CHM format\n\nYou need not use all of DigitallyCreated Utilities in your project. You can reference only the assemblies that contain the parts you want. Here are the dependencies:\n* *Bcl requires:*\n** .NET Framework 3.5 SP1\n* *Concurrency requires:*\n** .NET Framework 3.5 SP1\n* *ErrorReporting requires:*\n** .NET Framework 3.5 SP1\n* *Linq requires:*\n** .NET Framework 3.5 SP1\n* *Mvc requires:*\n** .NET Framework 3.5 SP1\n** Linq\n** System.Web.Mvc (v1)\n** jQuery (v1.3.2)\n* *Unity requires:*\n** .NET Framework 3.5 SP1\n** Concurrency\n** Unity Application Block (v1.2)\n\n!! Source Distribution\n\nThe source distribution contains the source code for this version. The following tools are used in its development:\n* Visual Studio 2008 SP1\n* ASP.NET MVC v1\n* Unity Application Block v1.2\n* [Sandcastle Help File Builder|http://www.codeplex.com/SHFB]\n\n!! Version History\n!!! v1.0.1\n* Fixed concurrent modification bug in Unity WCF client injection extension (DigitallyCreated.Utilities.Unity).\n* Added LinkedListChannel to Concurrency\n!!! v1.0.0\n* Added Bcl library\n* Added Concurrency library\n* Added ErrorReporting library\n* Added Unity library\n* Linq library:\n** Added CompiledQueryReplicator\n** Added EfUtil.ClearNonScalarProperties\n** Added MatchUp and Federator LINQ methods\n** Enhanced Sorter with XML serialisability\n* Mvc library:\n** Added CheckboxStandard HtmlHelper and BoolBinder\n** Added TempInfoBox HtmlHelper\n** Added CollapisbleFieldset HtmlHelper\n** Added Gravatar HtmlHelper\n** Added EncodeAndInsertBrsAndLinks Tutorial\n** Added IncomingRequestRouteConstraint\n** Added improved JsonResult\n** Added Permanently Redirect ActionResults\n** Added RouteHelpers (RouteToCurrentPage, Fluent syntax modification of RouteValueDictionary, MapPhysicalToVirtualPath, IsCurrentUserAuthorizedForRoute)\n!!! v0.2.0\n* Added EfUtil.SetModified which lets you set a single property on an entity as modified in a strongly typed manner\n!!! v0.1.0\n* Initial version",
+    "ReleasedDatge": "0001-01-01T00:00:00",
+    "ModifiedDate": "2010-05-25T20:35:17.907-07:00",
+    "Files": [
+      {
+        "Id": "5788c34d-ece0-4173-aade-735995a061af",
+        "FileName": "DigitallyCreated Utilities v1.0.1.zip",
+        "Url": "./3/5788c34d-ece0-4173-aade-735995a061af",
+        "Type": "Application",
+        "UploadDate": "2010-04-01T01:41:19.23-07:00"
+      },
+      {
+        "Id": "7e3bca5d-746d-4ea7-825f-bf64f370df9f",
+        "FileName": "DigitallyCreated Utilities v1.0.1 Source Code.zip",
+        "Url": "./3/7e3bca5d-746d-4ea7-825f-bf64f370df9f",
+        "Type": "Source Code",
+        "UploadDate": "2010-04-01T01:41:19.34-07:00"
+      }
+    ]
+  }
+]

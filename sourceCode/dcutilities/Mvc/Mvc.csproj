@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{861C1C6B-B7EC-434B-99F0-45C182D17355}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DigitallyCreated.Utilities.Mvc</RootNamespace>
+    <AssemblyName>DigitallyCreated.Utilities.Mvc</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
+    <!--<SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../StrongKeyName.pfx</AssemblyOriginatorKeyFile>-->
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\bin\Debug\DigitallyCreated.Utilities.Mvc.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\bin\Release\DigitallyCreated.Utilities.Mvc.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.Entity">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Abstractions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web.Extensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web.Mvc, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Web.Routing">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BbCodeHtmlHelpers.cs" />
+    <Compile Include="AcceptContentTypesAttribute.cs" />
+    <Compile Include="BoolBinder.cs" />
+    <Compile Include="CollapsibleFieldset.cs" />
+    <Compile Include="Configuration\DcuMvcConfigurationSection.cs" />
+    <Compile Include="Configuration\RequireHttpsConfigurationElement.cs" />
+    <Compile Include="CryptoBinder.cs" />
+    <Compile Include="EyeCandyHtmlHelpers.cs" />
+    <Compile Include="FormHtmlHelpers.cs" />
+    <Compile Include="GravatarHtmlHelpers.cs" />
+    <Compile Include="IActionAuthorizationTestable.cs" />
+    <Compile Include="IncomingRequestRouteConstraint.cs" />
+    <Compile Include="JsonResult.cs" />
+    <Compile Include="RequestMustHaveParamAttribute.cs" />
+    <Compile Include="PermanentRedirectResult.cs" />
+    <Compile Include="PermanentRedirectResultExtensions.cs" />
+    <Compile Include="PermanentRedirectToRouteResult.cs" />
+    <Compile Include="RequestMustNotHaveParamAttribute.cs" />
+    <Compile Include="RequireHttpsAttribute.cs" />
+    <Compile Include="RequireRemoteHttpsAttribute.cs" />
+    <Compile Include="RouteHelpers.cs" />
+    <Compile Include="TempInfoBoxType.cs" />
+    <Compile Include="PagedSortedHtmlHelpers.cs" />
+    <Compile Include="PagedSortedViewModel.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SorterModelBinder.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BbCode\BbCode.csproj">
+      <Project>{53B84EC1-BCE7-40C8-95CE-B3BC5110A1DB}</Project>
+      <Name>BbCode</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Bcl\Bcl.csproj">
+      <Project>{B1464C49-1948-4715-9801-411A43A8BB1D}</Project>
+      <Name>Bcl</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ef\Ef.csproj">
+      <Project>{89D44A92-F6B1-4815-9993-B9BA134E438D}</Project>
+      <Name>Ef</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

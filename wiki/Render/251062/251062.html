@@ -1,0 +1,9 @@
+<div class="wikidoc"><h1>IncomingRequestRouteConstraint Tutorial</h1>This tutorial aims to illustrate the use of the IncomingRequestRouteConstraint which can be found in the DigitallyCreated.Utilities.Mvc assembly. This tutorial assumes you know C# and ASP.NET MVC.<br /><br />The purpose of the IncomingRequestRouteConstraint is to allow you to specify on a route that it is only to match a route when it&#39;s for an incoming request, not for URL generation (see <a href="http://msdn.microsoft.com/en-us/library/system.web.routing.routedirection.aspx">RouteDirection</a>). This is great to use when you&#39;re providing a route to redirect people from a legacy URL. You don&#39;t want the routing engine, when creating URLs via UrlHelper etc, to create a legacy URL, but you <i>do</i> want incoming requests to that legacy URL to work.<br /><br />Here&#39;s an example of its use:<br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Green;">//In the RegisterRoutes method (or similar) in your global.asax Application class.</span>
+routes.MapRoute(
+    <span style="color:#A31515;">&quot;OldBlogPhpPermalinkRedirect&quot;</span>,
+    <span style="color:#A31515;">&quot;Blog/index.php&quot;</span>,
+    <span style="color:Blue;">new</span> { controller = <span style="color:#A31515;">&quot;Blog&quot;</span>, action = <span style="color:#A31515;">&quot;PermanentlyRedirectToBlog&quot;</span>, },
+    <span style="color:Blue;">new</span> { incomingRequestOnly = <span style="color:Blue;">new</span> IncomingRequestRouteConstraint(), }
+    );
+</pre></div></div><div class="ClearBoth"></div>

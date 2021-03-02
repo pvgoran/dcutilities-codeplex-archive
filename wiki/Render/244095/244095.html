@@ -1,0 +1,61 @@
+<div class="wikidoc"><h1>Miscellaneous Utilities Tutorial</h1>This tutorial aims to teach you about the existence of and how to use a few small utility methods that add strangely missing functionality to .NET&#39;s Base Class Library. It assumes you already know C#. All the classes and methods referred to herein belong to the DigitallyCreated.Utilities.Bcl library.<br />
+<h2>Collection AddAll/RemoveAll</h2>Strangely, the ICollection&lt;T&gt; interface does not provide AddAll and RemoveAll methods, which makes adding or removing collections of objects from a collection painful (1 line of code painful, but still!). The <span class="codeInline">Extensions.AddAll</span> and <span class="codeInline">Extensions.RemoveAll</span> extension methods add this functionality to ICollection&lt;T&gt;.<br /><br /><div style="color:Black;background-color:White;"><pre>
+IList&lt;<span style="color:Blue;">int</span>&gt; list = <span style="color:Blue;">new</span> List&lt;<span style="color:Blue;">int</span>&gt; { 1,2,3,4,5 };
+IList&lt;<span style="color:Blue;">int</span>&gt; list2 = <span style="color:Blue;">new</span> List&lt;<span style="color:Blue;">int</span>&gt; { 6,7,8,9,10 };
+list.AddAll(list2);
+
+IEnumerable&lt;<span style="color:Blue;">int</span>&gt; enumerable = <span style="color:Blue;">new</span> List&lt;<span style="color:Blue;">int</span>&gt; { 2, 4 };
+list.RemoveAll(enumerable);
+</pre></div>
+<h2>Case Insensitive String Comparison</h2>Case insensitive string comparison is awkward in .NET, making you do this contortion:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">bool</span> areEqual = String.Compare(firstString, compareToString, <span style="color:Blue;">true</span>) == 0;
+</pre></div><br />Now you can use the <span class="codeInline">Extensions.EqualsIgnoreCase</span> extension method to make this a little nicer and more natural:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">bool</span> areEqual = firstString.EqualsIgnoreCase(compareToString);
+</pre></div>
+<h2>Base64StreamReader</h2>Sometimes you&#39;ve got some Base64 encoded data and you want to read it like a stream. This is especially useful when reading from a large Base64 encoded data source (like a file, or a network stream) and then saving the decoded output bytes into a file on disk without loading the whole lot into memory at once.<br /><br />Here&#39;s a contrived example of the Base64StreamReader in action where we encode some random data into Base64 then decode it using the Base64StreamReader:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">void</span> Main()
+{
+    <span style="color:Green;">//Create random data and encode to Base64</span>
+    Random random = <span style="color:Blue;">new</span> Random();
+    <span style="color:Blue;">byte</span>[] originalBytes = <span style="color:Blue;">new</span> <span style="color:Blue;">byte</span>[256];
+    random.NextBytes(originalBytes);
+    <span style="color:Blue;">string</span> base64Str = Convert.ToBase64String(originalBytes, Base64FormattingOptions.InsertLineBreaks);
+
+    <span style="color:Green;">//Create the streams</span>
+    StringReader strReader = <span style="color:Blue;">new</span> StringReader(base64Str);
+    Base64StreamReader reader = <span style="color:Blue;">new</span> Base64StreamReader(strReader);
+    
+    <span style="color:Green;">//Read and decode from Base64Stream into readBytes</span>
+    <span style="color:Blue;">byte</span>[] readBytes = <span style="color:Blue;">new</span> <span style="color:Blue;">byte</span>[originalBytes.Length];
+    <span style="color:Blue;">int</span> offset = 0;
+    <span style="color:Blue;">int</span> read;
+    <span style="color:Blue;">while</span> ((read = reader.Read(readBytes, offset, Math.Min(32, originalBytes.Length - offset))) &gt; 0)
+    {
+        offset += read;
+    }
+}
+</pre></div><br />Note that Base64StreamReader does not support writing to the stream or seeking around the stream, only reading.<br />
+<h2>Useful Common Exception Types</h2>The Bcl library contains some exception types for errors that you encounter fairly often but the .NET BCL contains no exception type for.<br />
+<h3>AggregateException</h3>An AggregateException is a type of exception that allows you to bundle up multiple exceptions and throw them together. A place where you might want to do this is where you encounter an exception when cleaning up after an exception, like so:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">try</span>
+{
+    DoSomeStuff();
+}
+<span style="color:Blue;">catch</span> (Exception e)
+{
+    <span style="color:Blue;">try</span> 
+    {
+        BackOut();
+    }
+    <span style="color:Blue;">catch</span> (Exception e2)
+    {
+        <span style="color:Blue;">throw</span> <span style="color:Blue;">new</span> AggregateException(e, e2);
+    }
+	
+    <span style="color:Blue;">throw</span>;
+}
+</pre></div><br />Note that AggregateException has been <a href="http://msdn.microsoft.com/en-us/library/system.aggregateexception%28VS.100%29.aspx">added to the official .NET BCL</a> in .NET 4.0, so it is likely that the DigitallyCreated Utilities version will be obsoleted when the project shifts to .NET 4.0.<br />
+<h3>IllegalStateException</h3>The IllegalStateException is good to throw when an object has gotten into an illegal state.<br />
+<h3>NotFoundException</h3>The NotFoundException is good to throw when some data entity is missing. It allows you to set an entity name and ID, and therefore is useful for error handling code that can display this back to the user in a friendly way.<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">throw</span> <span style="color:Blue;">new</span> NotFoundException(<span style="color:#A31515;">&quot;Customer&quot;</span>, customerId.ToString());
+</pre></div></div><div class="ClearBoth"></div>

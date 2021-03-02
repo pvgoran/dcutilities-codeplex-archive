@@ -1,0 +1,26 @@
+<div class="wikidoc"><h1>Sorter Translation Dictionaries Tutorial</h1>This tutorial explains the use of Sorter Translation Dictionaries, which allow you to shorten the URLs produced by using a Sorter-powered table in an ASP.NET MVC view. This tutorial assumes you are familiar with C#, ASP.NET MVC and the <a href="https://dcutilities.codeplex.com/wikipage?title=Basic%20Sorter%20Tutorial&referringTitle=Sorter%20Translation%20Dictionaries%20Tutorial">previous Sorter&#47;Paging tutorial</a>.<br /><br />In the previous tutorial, we saw URLs being created that look like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+/Employee/Manage?sort=FirstName!&#39;LastName&#39;Email
+</pre></div><br />That sort parameter is already pretty long! If we had more than three columns in our table, it&#39;d start to get ridiculous. Sorter translation dictionaries provide a way to shorten that down to something more respectable, for example:<br /><br /><div style="color:Black;background-color:White;"><pre>
+/Employee/Manage?sort=F!&#39;L&#39;E
+</pre></div><br />It&#39;s quite easy to configure. In your model binder class that you created to bind the Sorter object parameter in your action method, override the TranslationDictionary property in this fashion:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">protected</span> <span style="color:Blue;">override</span> IDictionary&lt;Expression&lt;Func&lt;Employee, <span style="color:Blue;">object</span>&gt;&gt;, <span style="color:Blue;">string</span>&gt; TranslationDictionary
+{
+    <span style="color:Blue;">get</span>
+    {
+        <span style="color:Blue;">return</span> <span style="color:Blue;">new</span> Dictionary&lt;Expression&lt;Func&lt;Employee, <span style="color:Blue;">object</span>&gt;&gt;, <span style="color:Blue;">string</span>&gt;
+                    {
+                        { e =&gt; e.FirstName, <span style="color:#A31515;">&quot;F&quot;</span> },
+                        { e =&gt; e.LastName, <span style="color:#A31515;">&quot;L&quot;</span> },
+                        { e =&gt; e.Email, <span style="color:#A31515;">&quot;E&quot;</span> },
+                    };
+    }
+}
+</pre></div><br />What you&#39;re doing there is returning a dictionary that translates between the sortable properties and their alias name. So we&#39;ve defined that &quot;F&quot; is the alias for the FirstName property, &quot;L&quot; is the alias for the LastName property, and &quot;E&quot; is the alias for the Email property.<br /><br />You will also need to modify your override of the CreateNewSorter method so that your new Sorters are told about this translation dictionary (note how the TranslationDictionary property is passed to the constructor of the Sorter):<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">protected</span> <span style="color:Blue;">override</span> Sorter&lt;Employee&gt; CreateNewSorter()
+{
+    <span style="color:Blue;">return</span> <span style="color:Blue;">new</span> Sorter&lt;Employee&gt;(TranslationDictionary)
+        .AddProperty(e =&gt; e.FirstName, <span style="color:Blue;">true</span>)
+        .AddProperty(e =&gt; e.LastName, <span style="color:Blue;">true</span>)
+        .AddProperty(e =&gt; e.Email, <span style="color:Blue;">true</span>);
+}
+</pre></div><br />That&#39;s all you have to do. The encoding and decoding of the sort order will now be done via that translation dictionary, and your generated URL will reflect this.</div><div class="ClearBoth"></div>

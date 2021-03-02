@@ -1,0 +1,23 @@
+<div class="wikidoc"><h1>Miscellaneous Entity Framework Utilities Tutorial</h1>This tutorial aims to teach you about the existence of and how to use a few small utility methods that can make working with Entity Framework easier. It assumes you already know C# and Entity Framework. All the classes and methods referred to herein belong to the DigitallyCreated.Utilities.Linq library.<br />
+<h2>Clear Non-Scalar Properties</h2>The <span class="codeInline">EfUtils.ClearNonScalarProperties(EntityObject)</span> method allows you to clear all the non-scalar properties on any entity object (any class that derives from EntityObject; all Entity Framework designer entity classes do) with a single method call. Non-scalar properties are defined as:
+<ul><li>EntityCollections: the &quot;many&quot; ends of relationships (think Author.Books)</li>
+<li>The single end of relationships (think Book.Author)</li></ul>
+<br />Why would you want to do this? You may have a method somewhat like <span class="codeInline">CreateAuthor(Author)</span> in your business layer which takes the whole entity object Author. This means that a client (of the business layer) is freely able to set any of the properties on Author, such as Books (an <span class="codeInline">EntityCollection&lt;Book&gt;</span> navigation property). However, if they do so, they are likely to cause Entity Framework to throw an exception. In the case of adding some Books to Author.Books, Entity Framework will throw an UpdateException when you SaveChanges on your ObjectContext. So generally you will need to perform some manual clearing of objects before adding them to your ObjectContext:<br /><br /><div style="color:Black;background-color:White;"><pre>
+author.ID = <span style="color:Blue;">default</span>(<span style="color:Blue;">int</span>);
+author.Books.Clear();
+</pre></div><br />This is irritating and clutters your code when you&#39;re dealing with a number of entities. <span class="codeInline">EfUtil.ClearNonScalarProperties(EntityObject)</span> will clear all your non-scalar properties in one fell swoop. It is very fast as it will use reflection and System.CodeDom to generate a class at runtime that is able to clear your entity type and then use this class over and over to clear your entity (see <a href="http://www.digitallycreated.net/Blog/index.php?id=47">this blog post</a> for an implementation discussion and performance report).<br /><br /><div style="color:Black;background-color:White;"><pre>
+EfUtil.ClearNonScalarProperties(author);
+</pre></div><br />Not only is this an improvement because it shortens your code but it also aids maintenance because if you add new navigation properties in the future you will not need to go to all your business logic and add in new <span class="codeInline">.Clear()</span> calls.<br />
+<h2>Easy Detach</h2>You may sometimes find yourself in the situation where you need to detach the results of a query from your ObjectContext. You might write code like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+List&lt;Author&gt; authors = queryable.ToList();
+<span style="color:Blue;">foreach</span> (Author author <span style="color:Blue;">in</span> authors)
+    context.Detach(author);
+</pre></div><br />Now you can do all of that in one step:<br /><br /><div style="color:Black;background-color:White;"><pre>
+IList&lt;Author&gt; authors = EfUtil.Detach(queryable, context);
+</pre></div>
+<h2>Set Entity Properties to Modified State</h2>In the case where you are taking a detached entity into your business layer for editing (think <span class="codeInline">UpdateAuthor(Author)</span> in a web app) you will need to set the properties you want Entity Framework to save to the database as &quot;Modified&quot; in Entity Framework&#39;s ObjectStateManager, or else when you go <span class="codeInline">SaveChanges()</span> nothing will be saved! Instead of messing around with the ObjectStateManager directly, you can simply use the <span class="codeInline">EfUtil.SetModified</span> extension method to do it for you in a type-safe manner:<br /><br /><div style="color:Black;background-color:White;"><pre>
+author.SetModified(a =&gt; a.FirstName, context)
+      .SetModified(a =&gt; a.LastName, context);
+</pre></div><br />If you need to set all the properties on your entity as modified, simply use the <span class="codeInline">EfUtil.SetAllModified</span> extension method:<br /><br /><div style="color:Black;background-color:White;"><pre>
+author.SetAllModified(context);
+</pre></div></div><div class="ClearBoth"></div>

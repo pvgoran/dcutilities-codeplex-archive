@@ -1,0 +1,151 @@
+<div class="wikidoc"><h1>Basic Sorter and Paging Tutorial</h1>
+This tutorial aims to teach you how to use the Sorter functionality in your Entity Framework and ASP.NET MVC application. It assumes you already know Entity Framework and ASP.NET MVC and is written in C#.<br /><br />You can follow along in Visual Studio if you like. However, the tutorial doesn&#39;t go into insane nitty-gritty detail like using statements, etc. You will need to fill in some blanks yourself. We recommend at least having Visual Studio open and using the Object Browser to look at the XML documentation of the classes provided by this project. That will give you more information about the purpose of the classes used in this tutorial.<br /><br />The Sorter gives you the ability to easily let your users sort a table of entities that you have presented to them in the browser. They can click the column header cells to resort the columns. Multiple column sorting works out of the box. The page, as viewed, can be bookmarked with the sort order preserved as the order is placed in the URL. If they go away and come back to the same page within the same session, but without the URL parameter present, the sort order will be retrieved from the session.<br /><br />The Paging functionality lets you easily write a UI that lets the user page through data. This is good, because you don&#39;t want to load all the data you&#39;ve got in the DB and dump it on one page. Paging lets you cut it up into manageable chunks.<br /><br />In this tutorial we will use an example entity class called &quot;Employee&quot; which has three properties on it: &quot;FirstName&quot;, &quot;LastName&quot;, and &quot;Email&quot;. We are looking at a three layered application style. The UI layer is done in ASP.NET MVC, the business layer performs the business functionality (pretty much nothing in this tutorial), and the Data Access layer is the Entity Framework. Some may view this way of doing it as a slight merging between the Business layer and the Data Access layer, but that&#39;s okay.<br />
+<h2>Data Access layer</h2>
+If you&#39;re wanting to try to implement this tutorial, create a database with a single table that represents the employee entity. Then create an EDMX for this database with the Employee entity.<br />
+<h2>Writing the Business Layer</h2>
+In your business layer, you&#39;ll have a class that deals with employees. It&#39;ll look like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> EmployeeManager
+{
+    <span style="color:Blue;">private</span> <span style="color:Blue;">readonly</span> <span style="color:Blue;">int</span> _PageSize;
+
+    <span style="color:Blue;">public</span> EmployeeManager(<span style="color:Blue;">int</span> pageSize)
+    {
+        _PageSize = pageSize;
+    }
+}
+</pre></div><br />_PageSize stores the number of Employees you want returned in each &quot;page&quot; of data.<br /><br />You will have a method returns all employees that looks like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> IList&lt;Employee&gt; GetEmployees(<span style="color:Blue;">int</span> page, Sorter&lt;Employee&gt; sorter)
+{
+    <span style="color:Blue;">using</span> (MyEntitiesContext context = <span style="color:Blue;">new</span> MyEntitiesContext())
+    {
+        context.Employees.MergeOption = MergeOption.NoTracking;
+
+        <span style="color:Blue;">return</span> context.Employees.OrderBy(sorter).Page(page, _PageSize).ToList();
+    }
+}
+</pre></div><br />Notice that the method takes the page number, and the Sorter to use for sorting. The actual ordering and paging are done by calling the extension methods added to IQueryable&lt;T&gt;. They work in the same manner as the existing LINQ extension methods. We set the Employees ObjectQuery&#39;s MergOption to NoTracking, so that the objects returned from the query will be detached from the ObjectContext. We want this because the objects will be used outside of the lifecycle of the ObjectContext, which is disposed when the method returns.<br /><br />We&#39;re also going to need a method that counts the number of employees (for paging):<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">int</span> CountEmployees()
+{
+    <span style="color:Blue;">using</span> (MyEntitiesContext context = <span style="color:Blue;">new</span> MyEntitiesContext())
+    {
+        context.Employees.MergeOption = MergeOption.NoTracking;
+        <span style="color:Blue;">return</span> CompiledQueries.CountEmployees[MergeOption.NoTracking](context);
+    }
+}
+</pre></div><br />That method is calling on a compiled query that we will create. Compiled queries are a great way of speeding up LINQ queries that don&#39;t change (if you&#39;re shaky on Compiled Queries, <a href="http://www.digitallycreated.net/Blog/36/making-entity-framework-as-quick-as-a-fox">I discuss them on my blog</a>). We aren&#39;t going to forget that the <a href="http://www.digitallycreated.net/Blog/43/entity-framework-compiled-queries-bake-in-the-mergeoption">first MergeOption used on a compiled query is baked in</a>, so we&#39;ll use a <a href="https://dcutilities.codeplex.com/wikipage?title=CompiledQueryReplicator%20Tutorial&referringTitle=Basic%20Sorter%20Tutorial">CompiledQueryReplicator</a> to store the compiled query. We&#39;ll create a private static inner class of EmployeeManager called CompiledQueries to hold these compiled queries:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">#region</span> Compiled Queries
+
+<span style="color:Blue;">private</span> <span style="color:Blue;">static</span> <span style="color:Blue;">class</span> CompiledQueries
+{
+    <span style="color:Blue;">public</span> <span style="color:Blue;">static</span> <span style="color:Blue;">readonly</span> CompiledQueryReplicator&lt;Func&lt;MyEntitiesContext, <span style="color:Blue;">int</span>&gt;, MergeOption&gt;
+        CountEmployees = EfCompiledQueryReplicatorFactory&lt;MergeOption&gt;.Create(
+            (MyEntitiesContext context) =&gt;
+                (<span style="color:Blue;">from</span> employee <span style="color:Blue;">in</span> context.Employees
+                 <span style="color:Blue;">select</span> employee).Count());
+}
+
+<span style="color:Blue;">#endregion</span>
+</pre></div><br />That&#39;s all you need to do in your business layer.<br />
+<h2>Writing the UI</h2>
+Now that we&#39;ve got a working business layer going, we&#39;ll write the code to get the UI working.<br />
+<h3>Writing the Controller</h3>
+You&#39;re going to have an ASP.NET MVC Controller for your employee management stuff. Here&#39;s the skeleton:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> EmployeeController : Controller
+{
+    <span style="color:Blue;">private</span> <span style="color:Blue;">readonly</span> EmployeeManager _EmployeeManager;
+    <span style="color:Blue;">private</span> <span style="color:Blue;">const</span> <span style="color:Blue;">int</span> PAGE_SIZE = 20;
+
+    <span style="color:Blue;">public</span> EmployeeController()
+    {
+        _EmployeeManager = <span style="color:Blue;">new</span> EmployeeManager(PAGE_SIZE);
+    }
+}
+</pre></div><br />We&#39;ve created an EmployeeManager in the constructor and specified the paging size to be the constant we&#39;ve created.<br /><br />We&#39;ll define a Manage action method like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> ActionResult Manage(<span style="color:Blue;">int</span>? page, [ModelBinder(<span style="color:Blue;">typeof</span>(EmployeeSorterBinder))] Sorter&lt;Employee&gt; sort)
+{
+    <span style="color:Blue;">int</span> totalPages = PagedDataHelper.GetTotalPages(_EmployeeManager.CountEmployees(), PAGE_SIZE);
+    page = PagedDataHelper.ValidatePage(page, totalPages);
+
+    IList&lt;Employee&gt; employees = _EmployeeManager.GetEmployees(page.Value, sort);
+    <span style="color:Blue;">return</span> View(<span style="color:Blue;">new</span> PagedSortedViewModel&lt;Employee&gt;(employees, sort, page.Value, totalPages));
+}
+</pre></div><br />This method takes a nullable page number. This means that a page number may not necessarily be defined, which is fine because that means they want page 1. We also take a Sorter, which is loaded by using a model binder called &quot;EmployeeSorterBinder&quot; (as specified by the ModelBinder attribute). This is a class we will create shortly.<br /><br />The method first calculates the total number of pages by using the PagedDataHelper class (part of DigitallyCreated.Utilities.Linq). It then gets a valid page number by calling the ValidatePage method. This ensures that no bogus page numbers are entered, and if they are the page number is set to 1. We then get the page of employees from the business layer, using our page number and specifying the sort order by passing in our Sorter.<br /><br />We then create a PagedSortedViewModel, put the data we&#39;ve got into it, and pass that to the Manage view (that we will create shortly). A PagedSortedViewModel is a strongly typed object that holds the list of employees, sort order that we&#39;re using, the page number we&#39;re on, and the total number of pages available. The HtmlHelpers provided by this project hook off this class to do their magic. If you need to pass additional data to the View, aside from the sortable data (a common enough occurrence), you can use a different PagedSortedViewModel that supports an auxiliary model. This is covered in a <a href="https://dcutilities.codeplex.com/wikipage?title=PagedSortedViewModel%20with%20Auxiliary%20Data%20Model%20Tutorial&referringTitle=Basic%20Sorter%20Tutorial">separate tutorial</a>.<br /><br />Remember that &quot;EmployeeSorterBinder&quot; we used to bind the Sorter&lt;Employee&gt; parameter on the action method? We need to implement this now. However, we don&#39;t need to implement it from scratch, simply &quot;configure&quot; the basic binding provided by this project. We do this by subclassing SorterModelBinder&lt;T&gt; and overriding some methods to provide our configuration. I typically create a new private inner class inside the controller. You should not share these classes between controllers since things like the SessionKey are specific to the page you&#39;re writing with sorting (more on SessionKey later). Here&#39;s the code:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">private</span> <span style="color:Blue;">class</span> EmployeeSorterBinder : SorterModelBinder&lt;Employee&gt;
+{
+    <span style="color:Blue;">protected</span> <span style="color:Blue;">override</span> Sorter&lt;Employee&gt; CreateNewSorter()
+    {
+        <span style="color:Blue;">return</span> <span style="color:Blue;">new</span> Sorter&lt;Employee&gt;()
+            .AddProperty(e =&gt; e.FirstName, <span style="color:Blue;">true</span>)
+            .AddProperty(e =&gt; e.LastName, <span style="color:Blue;">true</span>)
+            .AddProperty(e =&gt; e.Email, <span style="color:Blue;">true</span>);
+    }
+
+    <span style="color:Blue;">protected</span> <span style="color:Blue;">override</span> <span style="color:Blue;">string</span> SessionKey
+    {
+        <span style="color:Blue;">get</span> { <span style="color:Blue;">return</span> <span style="color:#A31515;">&quot;Employee.Manage.Sorter&quot;</span>; }
+    }
+}
+</pre></div><br />We&#39;ve overridden the CreateNewSorter method. The superclass calls this method when it needs to create a new Sorter. This occurs when it can&#39;t get the sort order out of the page URL, and it can&#39;t find a copy of the last used Sorter in the ASP.NET session. We need to return a new Sorter that is configured with the default sorting order we want our page to have. In this case, we&#39;re sorting by FirstName ascending (true is ascending, false is descending), then LastName ascending, then Email ascending. Notice how we are using lambda expressions to select the property to sort by. Also notice how we are chaining together our method calls. This is because the AddProperty method (and most of the other Sorter methods as well) returns the Sorter object. It allows us to use a &quot;<a href="http://en.wikipedia.org/wiki/Fluent_interface">fluent</a>&quot; programming style.<br /><br />We also override the SessionKey property. The string we return is the key that the base class uses to retrieve (and save) the last used Sorter from the ASP.NET session. This is the reason we cannot share this class between pages. If we did, then the sorting settings for Employee wouldn&#39;t be saved on a per page basis, and would be shared between pages (of course, if you want this, go right ahead and share the class!).<br /><br />That&#39;s all we need to do in our controller.<br />
+<h3>Writing the View</h3>
+We&#39;ll need a matching Manage view to go with that Mange action method in the EmployeeController. It needs to be strongly typed with PagedSortedViewModel&lt;Employee&gt; like so:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="background-color:Yellow;">&lt;%</span><span style="color:Blue;">@</span> <span style="color:#A31515;">Page</span> <span style="color:Red;">Language</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;C#&quot;</span> <span style="color:Red;">MasterPageFile</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;~/Views/Shared/Site.Master&quot;</span> <span style="color:Red;">Inherits</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;System.Web.Mvc.ViewPage&lt;PagedSortedViewModel&lt;Employee&gt;&gt;&quot;</span> <span style="background-color:Yellow;">%&gt;</span>
+</pre></div><br />Now, inside the content section of your view, we&#39;ll write the table that will contain the employees:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">table</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">thead</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+            <span style="background-color:Yellow;">&lt;%=</span> Html.SortableColumnHeader(e =&gt; e.FirstName, <span style="color:#A31515;">&quot;First Name&quot;</span>) <span style="background-color:Yellow;">%&gt;</span>
+            <span style="background-color:Yellow;">&lt;%=</span> Html.SortableColumnHeader(e =&gt; e.LastName, <span style="color:#A31515;">&quot;Last Name&quot;</span>) <span style="background-color:Yellow;">%&gt;</span>
+            <span style="background-color:Yellow;">&lt;%=</span> Html.SortableColumnHeader(e =&gt; e.Email, <span style="color:#A31515;">&quot;Email&quot;</span>) <span style="background-color:Yellow;">%&gt;</span>
+        <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">thead</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">tbody</span><span style="color:Blue;">&gt;</span>
+        <span style="background-color:Yellow;">&lt;%</span> <span style="color:Blue;">if</span> (Model.Any() == <span style="color:Blue;">false</span>) { <span style="background-color:Yellow;">%&gt;</span>
+        
+        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">td</span> <span style="color:Red;">colspan</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;3&quot;</span><span style="color:Blue;">&gt;</span>There are no employees.<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+        
+        <span style="background-color:Yellow;">&lt;%</span> } <span style="background-color:Yellow;">%&gt;</span>
+        
+        <span style="background-color:Yellow;">&lt;%</span> <span style="color:Blue;">foreach</span> (Employee employee <span style="color:Blue;">in</span> Model) { <span style="background-color:Yellow;">%&gt;</span>
+        
+        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span><span style="background-color:Yellow;">&lt;%=</span> Html.Encode(employee.FirstName) <span style="background-color:Yellow;">%&gt;</span><span style="color:Blue;">&lt;/</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span><span style="background-color:Yellow;">&lt;%=</span> Html.Encode(employee.LastName) <span style="background-color:Yellow;">%&gt;</span><span style="color:Blue;">&lt;/</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span><span style="background-color:Yellow;">&lt;%=</span> Html.Encode(employee.Email) <span style="background-color:Yellow;">%&gt;</span><span style="color:Blue;">&lt;/</span><span style="color:#A31515;">td</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">tr</span><span style="color:Blue;">&gt;</span>
+        
+        <span style="background-color:Yellow;">&lt;%</span> } <span style="background-color:Yellow;">%&gt;</span>
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">tbody</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">table</span><span style="color:Blue;">&gt;</span>
+</pre></div><br />You&#39;ll notice that in the <span class="codeInline">thead</span> section we&#39;re using some nice HtmlHelpers to output the HTML for each column header cell. The generated HTML allows the user to click the text to cause a sort. The sorting works in the same way as in any standard Windows list view with sortable columns. Here&#39;s what the HTML it generates looks like for all three columns:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">th</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Sortable SortedAscending PrimarySortColumn&quot;</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">a</span> <span style="color:Red;">title</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;First Name (Sorted Ascending)&quot;</span> <span style="color:Red;">href</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;/Employee/Manage?sort=FirstName!&#39;LastName&#39;Email&quot;</span><span style="color:Blue;">&gt;</span>
+        First Name 
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">th</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Sortable SortedAscending NonPrimarySortColumn&quot;</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">a</span> <span style="color:Red;">title</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Last Name (Sorted Ascending)&quot;</span> <span style="color:Red;">href</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;/Employee/Manage?sort=LastName&#39;FirstName&#39;Email&quot;</span><span style="color:Blue;">&gt;</span>
+        Last Name 
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">th</span> <span style="color:Red;">class</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Sortable SortedAscending NonPrimarySortColumn&quot;</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">a</span> <span style="color:Red;">title</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;Email (Sorted Ascending)&quot;</span> <span style="color:Red;">href</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;/Employee/Manage?sort=Email&#39;FirstName&#39;LastName&quot;</span><span style="color:Blue;">&gt;</span>
+        Email 
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">th</span><span style="color:Blue;">&gt;</span>
+</pre></div><br />Note how all {th} elements have the class Sortable. The columns that are sorted ascending have the class SortedAscending; those that are sorted descending would have the class SortedDescending instead. The primary sort column (the first one being sorted; ie. if you&#39;re sorting by First Name, then Last Name, the primary column is First Name) has the class PrimarySortColumn and all others have the class NonPrimarySortColumn. These classes allow you to use CSS to style the table cell, perhaps to contain a sort direction arrow to aid the user.<br /><br />Also note the sort order in the link href. It will be used if the user clicks this column header cell. The encoding that is used for this query string parameter is well documented in the Sorter class&#39;s XML documentation. There are ways to shorten it (ie to something like <span class="codeInline">?sort=F!&#39;L&#39;E&#39;U</span>) but this is not covered in this tutorial (see <a href="https://dcutilities.codeplex.com/wikipage?title=Sorter%20Translation%20Dictionaries%20Tutorial&referringTitle=Basic%20Sorter%20Tutorial">Sorter Translation Dictionaries Tutorial</a>). The name of the column and its current sort order is also outputted into the link&#39;s title attribute.<br /><br />The rest of the code in the above View code snippet is standard-fare ASP.NET MVC. We&#39;re just iterating over the Model and outputting each employee. The PagedSortedViewModel&lt;T&gt; is IEnumerable&lt;T&gt;, so it automatically iterates over the list of employees you passed into its constructor in the Controller.<br /><br />Now we want some paging controls. We can get them by simply using this HtmlHelper:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="background-color:Yellow;">&lt;%=</span> Html.PagingControls() <span style="background-color:Yellow;">%&gt;</span>
+</pre></div><br />This outputs HTML that looks like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">p</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">a</span> <span style="color:Red;">href</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;/Employee/Manage?page=1&quot;</span><span style="color:Blue;">&gt;</span><span style="color:Red;">&amp;lt;</span><span style="color:Red;">&amp;lt;</span> Previous<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span> 
+    Page 2 of 3 
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">a</span> <span style="color:Red;">href</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;/Employee/Manage?page=3&quot;</span><span style="color:Blue;">&gt;</span>Next <span style="color:Red;">&amp;gt;</span><span style="color:Red;">&amp;gt;</span><span style="color:Blue;">&lt;/</span><span style="color:#A31515;">a</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">p</span><span style="color:Blue;">&gt;</span>
+</pre></div><br />The Previous and Next links will not be rendered when there is no next or previous page.<br /><br />Both the sortable column headers and the paging controls play nice with each other. Both paging and sorting will generate URLs that retain all the other query string parameters present, so you get URLs like this:<br /><br /><span class="codeInline">/Employee/Manage?page=2&amp;sort=LastName!&#39;FirstName&#39;Email&#39;Username</span><br /><br />And that&#39;s it! You&#39;ve now got sorting and paging for almost free!<br />
+<h2>Disadvantages</h2>
+The main disadvantage to using the Sorter class is that you cannot create compiled queries that involve the new <span class="codeInline">OrderBy(Sorter&lt;T&gt;)</span> extension method. Because the query is generated dynamically based on the user&#39;s sort preferences compiling queries won&#39;t work because to compile a query it needs to be static (unchanging). By its very nature, Sorter is <i>not</i> static. The end result means that your queries take a bit longer to run than compiled queries.<br />
+<h2>Hints</h2>
+To easily use the new HtmlHelpers in your ASP.NET MVC views, add the following to your web.config under the system.web/pages/namespaces tag:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">add</span> <span style="color:Red;">namespace</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">DigitallyCreated.Utilities.Mvc</span><span style="color:Black;">&quot;</span><span style="color:Blue;">/&gt;</span>
+</pre></div><br />This ensures that your views include that namespace by default, thereby making the new HtmlHelper extension methods available to you without doing manual imports.</div><div class="ClearBoth"></div>

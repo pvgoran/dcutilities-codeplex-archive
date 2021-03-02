@@ -1,0 +1,59 @@
+<div class="wikidoc"><h1>Active Object Tutorial</h1>This tutorial aims to teach you how to use the <span class="codeInline">ActiveObject</span> concurrency utilities that can be found in the DigitallyCreated.Utilities.Concurrency library.<br /><br />An <span class="codeInline">ActiveObject</span> is an object whose logic run in a different thread. Inheriting from either <span class="codeInline">BoolStopActiveObject</span> or <span class="codeInline">InterruptStopActiveObject</span> enables you to very quickly create a class whose code runs in a separate thread, saving you from having to create all the boilerplate code such as creating and setting up a <span class="codeInline">Thread</span> object, setting up a Finished event, and writing a safe way to stop the code running in that Thread.<br /><br /><span class="codeInline">ActiveObject</span> allows inheritors to simply provide the implementation for the <span class="codeInline">Run</span> method, and then clients can call <span class="codeInline">Start</span> to start the execution of <span class="codeInline">Run</span>, but in a different thread. When <span class="codeInline">Run</span> returns, <span class="codeInline">ActiveObject</span> fires the <span class="codeInline">Stopped</span> event, which allows clients to be notified of when the thread has completed its execution, which is useful in some cases, particularly in the UI when you want to update the UI when the <span class="codeInline">ActiveObject</span> has completed processing something asynchronously. Be aware that <span class="codeInline">Stopped</span> is fired on the <span class="codeInline">ActiveObject</span>&#39;s thread.<br /><br />There are two types of <span class="codeInline">ActiveObject</span>, the <span class="codeInline">BoolStopActiveObject</span> and the <span class="codeInline">InterruptStopActiveObject</span>, which each implement a different method for signalling to the ActiveObject that it needs to stop executing.<br />
+<h2>BoolStopActiveObject</h2>The <span class="codeInline">BoolStopActiveObject</span> uses a boolean flag to indicate that the logic currently running inside it has been asked to stop as soon as possible. Here&#39;s an example of it in use:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> MyBoolStopActiveObject : BoolStopActiveObject
+{
+    <span style="color:Blue;">public</span> MyBoolStopActiveObject()
+        : <span style="color:Blue;">base</span>(<span style="color:#A31515;">&quot;MyBoolStopActiveObject&quot;</span>, <span style="color:Blue;">true</span>)
+    {
+    }
+
+    <span style="color:Blue;">protected</span> <span style="color:Blue;">override</span> <span style="color:Blue;">void</span> Run()
+    {
+        <span style="color:Blue;">while</span> (StopRequested == <span style="color:Blue;">false</span>)
+        {
+            <span style="color:Green;">//Do work</span>
+        }
+    }
+}
+</pre></div><br />The constructor calls the base constructor which sets the thread&#39;s name and makes it a background thread (the <span class="codeInline">true</span> second parameter). In the <span class="codeInline">Run</span> method, which is what is run by the internal ActiveObject thread, we do a loop, whereby each iteration a check against the protected property <span class="codeInline">StopRequested</span> is done. <span class="codeInline">StopRequested</span> is set when <span class="codeInline">RequestStop</span> (inherited from <span class="codeInline">ActiveObject</span>) is called. When <span class="codeInline">StopRequested</span> is true, <span class="codeInline">Run</span> returns and the internal thread will stop. Of course, when you check <span class="codeInline">StopRequested</span> is entirely up to you.<br />
+<h2>InterruptStopActiveObject</h2>The <span class="codeInline">InterruptStopActiveObject</span> uses a thread interrupt (see <a href="http://msdn.microsoft.com/en-us/library/system.threading.thread.interrupt.aspx">Thread.Interrupt</a> for more information) to signal that your <span class="codeInline">ActiveObject</span> thread needs to stop executing. Here is an example implementation:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> MyInterruptStopActiveObject : InterruptStopActiveObject
+{
+    <span style="color:Blue;">public</span> MyInterruptStopActiveObject()
+        : <span style="color:Blue;">base</span>(<span style="color:#A31515;">&quot;MyInterruptStopActiveObject&quot;</span>, <span style="color:Blue;">true</span>)
+    {
+    }
+
+    <span style="color:Blue;">protected</span> <span style="color:Blue;">override</span> <span style="color:Blue;">void</span> Run()
+    {
+        <span style="color:Blue;">while</span> (<span style="color:Blue;">true</span>)
+        {
+            <span style="color:Green;">//Do periodic work</span>
+            
+            <span style="color:Blue;">try</span> {
+                Thread.Sleep(1000);
+            }
+            <span style="color:Blue;">catch</span> (ThreadInterruptedException e)
+            { 
+                <span style="color:Blue;">return</span>; <span style="color:Green;">//Time to exit</span>
+            }
+        }
+    }
+}
+</pre></div><br />In the <span class="codeInline">Run</span> method, we catch any ThreadInterruptedException that could occur (in this instance, it could occur from the <span class="codeInline">Thread.Sleep</span> call) and return immediately, ending the <span class="codeInline">ActiveObject</span>&#39;s thread.<br />
+<h2>Using an ActiveObject</h2>
+<div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">void</span> Main()
+{
+    MyInterruptStopActiveObject activeObject = <span style="color:Blue;">new</span> MyInterruptStopActiveObject();
+    activeObject.Stopped += OnActiveObjectStopped;
+    activeObject.Start(); <span style="color:Green;">//Start activeObject&#39;s thread</span>
+    activeObject.RequestStop(); <span style="color:Green;">//Ask activeObject to stop</span>
+    activeObject.Join(); <span style="color:Green;">//Don&#39;t return until activeObject stops</span>
+}
+
+<span style="color:Blue;">public</span> <span style="color:Blue;">void</span> OnActiveObjectStopped(<span style="color:Blue;">object</span> sender, EventArgs args)
+{
+    Console.WriteLine(<span style="color:#A31515;">&quot;Stopped&quot;</span>);
+}
+</pre></div></div><div class="ClearBoth"></div>

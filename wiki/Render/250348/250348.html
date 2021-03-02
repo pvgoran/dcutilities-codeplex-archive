@@ -1,0 +1,65 @@
+<div class="wikidoc"><h1>MatchUp and Federator LINQ Methods Tutorial</h1>This tutorial aims to illustrate the usage of the MatchUp and Federate LINQ-style extension methods that are found in the DigitallyCreated.Utilities.Linq assembly. It assumes you know C# 3.0 and LINQ.<br />
+<h2>MatchUp</h2>MatchUp is great when you&#39;ve got two <span class="codeInline">IEnumerable&lt;T&gt;</span>s and you need to do a &quot;diff&quot; (ie. what is in both, what is in only the first, what is in only the second).<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">string</span>[] strs1 = <span style="color:Blue;">new</span>[] { <span style="color:#A31515;">&quot;A&quot;</span>, <span style="color:#A31515;">&quot;B&quot;</span>, <span style="color:#A31515;">&quot;C&quot;</span>, };
+<span style="color:Blue;">string</span>[] strs2 = <span style="color:Blue;">new</span>[] { <span style="color:#A31515;">&quot;B&quot;</span>, <span style="color:#A31515;">&quot;C&quot;</span>, <span style="color:#A31515;">&quot;D&quot;</span>, };
+
+IEnumerable&lt;MatchPair&lt;<span style="color:Blue;">string</span>, <span style="color:Blue;">string</span>&gt;&gt; matchups = strs1.MatchUp(strs2);
+
+<span style="color:Green;">//In first, but not in second (&quot;A&quot;)</span>
+matchups.Where(m =&gt; m.IsFirstSet &amp;&amp; m.IsSecondSet == <span style="color:Blue;">false</span>).Select(m =&gt; m.First);
+
+<span style="color:Green;">//In second, but not in first (&quot;D&quot;)</span>
+matchups.Where(m =&gt; m.IsSecondSet &amp;&amp; m.IsFirstSet == <span style="color:Blue;">false</span>).Select(m =&gt; m.Second);
+
+<span style="color:Green;">//In both (&quot;B&quot;, &quot;C&quot;)</span>
+matchups.Where(m =&gt; m.IsFirstSet &amp;&amp; m.IsSecondSet).Select(m =&gt; m.First);
+</pre></div><br />In the above case, MatchUp returns an IEnumerable of MatchPair&lt;string, string&gt;. Each MatchPair contains a match between an element from the first sequence (strs1) and an element from the second sequence (strs2). Here&#39;s a table that illustrates what MatchUp returns for the above example:<br /><br /><b>IEnumerable&lt;MatchPair&lt;string,string&gt;&gt;</b><br /><table><tr><th>First</th><th>Second</th><th>IsFirstSet</th><th>IsSecondSet</th></tr>
+<tr><td>A</td><td><i>null</i></td><td>True</td><td>False</td></tr>
+<tr><td>B</td><td>B</td><td>True</td><td>True</td></tr>
+<tr><td>C</td><td>C</td><td>True</td><td>True</td></tr>
+<tr><td><i>null</i></td><td>D</td><td>False</td><td>True</td></tr></table><br /><br />You can do it for whole objects where you just want to match up on some custom condition (good for matching on a property on the object):<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">var</span> objs1 = <span style="color:Blue;">new</span>[] { <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;A&quot;</span>, Last = <span style="color:#A31515;">&quot;1&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;B&quot;</span>, Last = <span style="color:#A31515;">&quot;2&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;C&quot;</span>, Last = <span style="color:#A31515;">&quot;3&quot;</span>}, };
+<span style="color:Blue;">var</span> objs2 = <span style="color:Blue;">new</span>[] { <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;B&quot;</span>, Last = <span style="color:#A31515;">&quot;4&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;C&quot;</span>, Last = <span style="color:#A31515;">&quot;5&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;D&quot;</span>, Last = <span style="color:#A31515;">&quot;6&quot;</span>}, };
+
+<span style="color:Blue;">var</span> matchups = objs1.MatchUp(objs2, (f, s) =&gt; f.First == s.First);
+</pre></div><br />As you can see above, the second parameter passed into MatchUp is a comparison function that takes a &quot;first&quot; object and a &quot;second&quot; object and returns whether or not they match. In this case, we&#39;re comparing their <span class="codeInline">.First</span> property. Here&#39;s the matchup table for the above example:<br /><br /><b>IEnumerable&lt;MatchPair&lt;<i>anonymous type</i>,<i>anonymous type</i>&gt;&gt;</b><br /><table><tr><th>First</th><th>Second</th><th>IsFirstSet</th><th>IsSecondSet</th></tr>
+<tr><td>{ First = A, Last = 1 }</td><td><i>null</i></td><td>True</td><td>False</td></tr>
+<tr><td>{ First = B, Last = 2 }</td><td>{ First = B, Last = 4 }</td><td>True</td><td>True</td></tr>
+<tr><td>{ First = C, Last = 3 }</td><td>{ First = C, Last = 5 }</td><td>True</td><td>True</td></tr>
+<tr><td><i>null</i></td><td>{ First = D, Last = 6 }</td><td>False</td><td>True</td></tr></table><br /><br />With that custom comparison function you can use MatchUp to match up objects of different types, like so:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">var</span> objs1 = <span style="color:Blue;">new</span>[] { <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;A&quot;</span>, Last = <span style="color:#A31515;">&quot;1&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;B&quot;</span>, Last = <span style="color:#A31515;">&quot;2&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;C&quot;</span>, Last = <span style="color:#A31515;">&quot;3&quot;</span>}, };
+<span style="color:Blue;">string</span>[] strs2 = <span style="color:Blue;">new</span>[] { <span style="color:#A31515;">&quot;B&quot;</span>, <span style="color:#A31515;">&quot;C&quot;</span>, <span style="color:#A31515;">&quot;D&quot;</span>, };
+
+<span style="color:Blue;">var</span> matchups = objs1.MatchUp(strs2, (f, s) =&gt; f.First == s);
+</pre></div><br />In the above example we&#39;re matching up that anonymous type against an array of strings. Here&#39;s the matchup table for that:<br /><br /><b>IEnumerable&lt;MatchPair&lt;<i>anonymous type</i>,string&gt;&gt;</b><br /><table><tr><th>First</th><th>Second</th><th>IsFirstSet</th><th>IsSecondSet</th></tr>
+<tr><td>{ First = A, Last = 1 }</td><td><i>null</i></td><td>True</td><td>False</td></tr>
+<tr><td>{ First = B, Last = 2 }</td><td>B</td><td>True</td><td>True</td></tr>
+<tr><td>{ First = C, Last = 3 }</td><td>C</td><td>True</td><td>True</td></tr>
+<tr><td><i>null</i></td><td>D</td><td>False</td><td>True</td></tr></table><br />
+<h2>Federator</h2>The Federate and FederateWith LINQ extension methods perform a similar function to MatchUp, however, are able to do it with more than two sequences. This benefit is traded off with increased complexity, so if you only need to do a matchup between two sequences, use MatchUp. Also, if you need to match up between two different types, use MatchUp.<br /><br />The name Federate (and the Federator) was used because the meaning of the word federate is &quot;to cause to join into a league or union&quot;, which is what the Federator does (joins multiple sequences into a form where they are matched up and you can iterate over them together). Also, &quot;the Federator&quot; sounds cool (like Terminator, except for sequences?!)!<br /><br />Here&#39;s an example similar to the MatchUp examples that illustrates why you should use MatchUp if you have two sequences:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">var</span> objs1 = <span style="color:Blue;">new</span>[] { <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;A&quot;</span>, Last = <span style="color:#A31515;">&quot;1&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;B&quot;</span>, Last = <span style="color:#A31515;">&quot;2&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;C&quot;</span>, Last = <span style="color:#A31515;">&quot;3&quot;</span>}, };
+<span style="color:Blue;">var</span> objs2 = <span style="color:Blue;">new</span>[] { <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;B&quot;</span>, Last = <span style="color:#A31515;">&quot;4&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;C&quot;</span>, Last = <span style="color:#A31515;">&quot;5&quot;</span>}, <span style="color:Blue;">new</span> { First = <span style="color:#A31515;">&quot;D&quot;</span>, Last = <span style="color:#A31515;">&quot;6&quot;</span>}, };
+
+<span style="color:Blue;">var</span> federated = objs2.Federate(objs2, p =&gt; p.First);
+
+<span style="color:Green;">//In first but not second</span>
+(<span style="color:Blue;">from</span> g <span style="color:Blue;">in</span> federated
+ <span style="color:Blue;">where</span> g.Any(p =&gt; p.SequenceIndex == 0) &amp;&amp; !g.Any(p =&gt; p.SequenceIndex == 1)
+ <span style="color:Blue;">select</span> g).Select(s =&gt; s.First().Item);
+ 
+<span style="color:Green;">//In second but not first</span>
+(<span style="color:Blue;">from</span> g <span style="color:Blue;">in</span> federated
+ <span style="color:Blue;">where</span> g.Any(p =&gt; p.SequenceIndex == 1) &amp;&amp; !g.Any(p =&gt; p.SequenceIndex == 0)
+ <span style="color:Blue;">select</span> g).Select(s =&gt; s.First().Item);
+ 
+<span style="color:Green;">//In both</span>
+(<span style="color:Blue;">from</span> g <span style="color:Blue;">in</span> federated
+ <span style="color:Blue;">where</span> g.Any(p =&gt; p.SequenceIndex == 0) &amp;&amp; g.Any(p =&gt; p.SequenceIndex == 1)
+ <span style="color:Blue;">select</span> g).Select(s =&gt; s.First().Item);
+</pre></div><br />The above code uses the Federate extension method, which allows you to easily federate (match up) two sequences. The second parameter is a selector that selects the property on which to perform the matching (in this case the <span class="codeInline">.First</span> property). The Federate method (in this case) returns an <span class="codeInline">IEnumerable</span> of <span class="codeInline">IGrouping&lt;string, FederatedGroupItem&lt;_anonymous type_&gt;&gt;</span> (the IGrouping is because behind the scenes it uses GroupBy). The FederatedGroupItem contains the actual object from the sequence, and the sequence index number. The index number is zero-based, and is numbered in the order that you passed the sequences to the Federator. So for the above Federate call, <span class="codeInline">objs1</span> is index 0, and <span class="codeInline">objs2</span> is index 1. Here&#39;s an object dump view of the above Federator result:<br /><br /><img src="http://download-codeplex.sec.s-msft.com/Download?ProjectName=dcutilities&DownloadId=111951" alt="FederatorOutput.gif" title="FederatorOutput.gif" /><br /><br />However, the main use case for the Federator is matching up more than two sequences. Here&#39;s a simple example of that: <br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">string</span>[] strs1 = <span style="color:Blue;">new</span>[] { <span style="color:#A31515;">&quot;A&quot;</span>, <span style="color:#A31515;">&quot;B&quot;</span>, <span style="color:#A31515;">&quot;C&quot;</span>, };
+<span style="color:Blue;">string</span>[] strs2 = <span style="color:Blue;">new</span>[] { <span style="color:#A31515;">&quot;B&quot;</span>, <span style="color:#A31515;">&quot;C&quot;</span>, <span style="color:#A31515;">&quot;D&quot;</span>, };
+<span style="color:Blue;">string</span>[] strs3 = <span style="color:Blue;">new</span>[] { <span style="color:#A31515;">&quot;C&quot;</span>, <span style="color:#A31515;">&quot;D&quot;</span>, <span style="color:#A31515;">&quot;E&quot;</span>, };
+
+IEnumerable&lt;IGrouping&lt;<span style="color:Blue;">string</span>,FederatedGroupItem&lt;<span style="color:Blue;">string</span>&gt;&gt;&gt; result = strs1.FederateWith(strs2).FederateWith(strs3).Federate();
+</pre></div><br />In the above example, the first FederateWith call returns an IFederable&lt;string&gt;, upon which we add another sequence to be federated by calling FederateWith (this time on the IFederable). Once we&#39;re done adding sequences to be federated, we call Federate (on the IFederable) and this returns us our expected IEnumerable of IGrouping. In fact, the two sequence federator method used in the first example (<span class="codeInline">.Federate</span> off IEnumerable) is nothing more than a utility method that simple calls FederateWith then Federate (on the returned IFederable).<br />This is the object dump for the above federation:<br /><br /><img src="http://download-codeplex.sec.s-msft.com/Download?ProjectName=dcutilities&DownloadId=111949" alt="FederatorOutputThreeSeqs.gif" title="FederatorOutputThreeSeqs.gif" /></div><div class="ClearBoth"></div>

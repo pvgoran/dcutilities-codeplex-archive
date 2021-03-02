@@ -1,0 +1,51 @@
+<div class="wikidoc"><h1>CompiledQueryReplicator Tutorial</h1>This tutorial aims to teach you how to use the CompiledQueryReplicator, why it exists and why it is useful. It assumes you already know C# and Entity Framework. It also assumes that you know about compiled queries (more info: <a href="http://msdn.microsoft.com/en-us/library/bb896297.aspx">MSDN</a>, <a href="http://www.digitallycreated.net/Blog/36/making-entity-framework-as-quick-as-a-fox">Blog</a>).<br /><br />The CompiledQueryReplicator is a class that allows you to define your LINQ query once, but have multiple compiled instances of it available at any one time.<br />
+<h2>Why do I need this?</h2>
+The reason CompiledQueryReplicator was created was to make working with compiled queries in Entity Framework easier when you want to change an <a href="http://msdn.microsoft.com/en-us/library/system.data.objects.objectquery.mergeoption.aspx">ObjectQuery&#39;s MergeOptions</a>. Unfortunately, when a compiled LINQ to Entities query is first run (and it actually compiles), the MergeOption that you&#39;ve set on the ObjectQuery in the ObjectContext you&#39;ve passed in is &quot;baked&quot; into the compiled query. So if the first time you run your compiled query and your ObjectContext&#39;s ObjectQuery.MergeOption is set to MergeOption.NoTracking, the compiled query will forevermore return objects that are not attached to your ObjectContext, even if you call the query a second time with a different ObjectContext with a different ObjectQuery.MergeOption!<br /><br />This issue is discussed in more detail in this <a href="http://www.digitallycreated.net/Blog/43/entity-framework-compiled-queries-bake-in-the-mergeoption">blog</a>. It&#39;s nasty because depending on what method calls your compiled query first, a different MergeOption can be baked in, leading to weird crashes and data strangely not being saved.<br /><br />The only way (that I can see, anyway) to get around this issue of the MergeOption being baked into the compiled query is to have a different compiled query per MergeOption. So you&#39;d have to have code like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">private</span> <span style="color:Blue;">static</span> <span style="color:Blue;">class</span> CompiledQueries
+{
+    <span style="color:Blue;">public</span> <span style="color:Blue;">static</span> <span style="color:Blue;">readonly</span> Func&lt;AdventureWorksEntities, <span style="color:Blue;">int</span>, Product&gt;
+        GetProductWithAppendOnly = CompiledQuery.Compile(
+            (AdventureWorksEntities context, <span style="color:Blue;">int</span> id) =&gt;
+                (<span style="color:Blue;">from</span> licence <span style="color:Blue;">in</span> context.Product
+                 <span style="color:Blue;">where</span> licence.ProductID == id
+                 <span style="color:Blue;">select</span> licence).FirstOrDefault());
+
+    <span style="color:Blue;">public</span> <span style="color:Blue;">static</span> <span style="color:Blue;">readonly</span> Func&lt;AdventureWorksEntities, <span style="color:Blue;">int</span>, Product&gt;
+        GetProductWithNoTracking = CompiledQuery.Compile(
+            (AdventureWorksEntities context, <span style="color:Blue;">int</span> id) =&gt;
+                (<span style="color:Blue;">from</span> product <span style="color:Blue;">in</span> context.Product
+                 <span style="color:Blue;">where</span> product.ProductID == id
+                 <span style="color:Blue;">select</span> product).FirstOrDefault());
+}
+</pre></div><br />But that&#39;s a rubbish solution, because when you want to modify that query, you need to change it multiple places: a maintenance nightmare. This is where the CompiledQueryReplicator comes it. It lets you define that query once, and then it will transparently give you different compiled query instances.<br />
+<h2>How do I use it?</h2>
+The CompiledQueryReplicator is basically a very simple Dictionary (although it does not implement IDictionary, since the semantic is slightly different). Instances of a compiled query are indexed by a key. This key type is generic so you can choose what it will be. You simply request a particular instance using a key object (like a Dictionary), and that compiled query instance will be returned to you. (If it didn&#39;t exist already it will be automatically created; this means you don&#39;t need to worry about adding entries to this &quot;Dictionary&quot;. You just ask for what you want, and it just gives it to you, creating it if it doesn&#39;t exist.)<br /><br />If you&#39;re using the Entity Framework, it is recommended that you use the EfCompiledQueryReplicatorFactory class to construct instances of CompiledQueryReplicator. By using its static methods you can get a simpler syntax since we can make use of compiler type inference (which you don&#39;t get when calling a constructor).<br /><br />Here&#39;s how the previous (bad) example is simplified using the CompiledQueryReplicator:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">private</span> <span style="color:Blue;">static</span> <span style="color:Blue;">class</span> CompiledQueries
+{
+    <span style="color:Blue;">public</span> <span style="color:Blue;">static</span> <span style="color:Blue;">readonly</span> CompiledQueryReplicator&lt;Func&lt;AdventureWorksEntities, <span style="color:Blue;">int</span>, Product&gt;, MergeOption&gt;
+        GetProduct = EfCompiledQueryReplicatorFactory&lt;MergeOption&gt;.Create(
+            (AdventureWorksEntities context, <span style="color:Blue;">int</span> id) =&gt;
+                (<span style="color:Blue;">from</span> product <span style="color:Blue;">in</span> context.Product
+                 <span style="color:Blue;">where</span> product.ProductID == id
+                 <span style="color:Blue;">select</span> product).FirstOrDefault());
+}
+</pre></div><br />It looks pretty much the same as creating a normal compiled query, which is nice. We&#39;re specifying that the key type should be MergeOption, so we can have a different compiled query per MergeOption.<br /><br />This is how we access and use the compiled queries:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> Product GetProductById(<span style="color:Blue;">int</span> id)
+{
+    <span style="color:Blue;">using</span> (AdvWorksEntities context = <span style="color:Blue;">new</span> AdvWorksEntities())
+    {
+        context.Product.MergeOption = MergeOption.NoTracking;
+        <span style="color:Blue;">return</span> CompiledQueries.GetProduct[MergeOption.NoTracking](context, id);
+    }
+}
+
+<span style="color:Blue;">public</span> <span style="color:Blue;">void</span> ChangeProductName(<span style="color:Blue;">int</span> id, <span style="color:Blue;">string</span> newName)
+{
+    <span style="color:Blue;">using</span> (AdvWorksEntities context = <span style="color:Blue;">new</span> AdvWorksEntities())
+    {
+        Product product = CompiledQueries.GetProduct[MergeOption.AppendOnly](context, id);
+        product.Name = newName;
+        context.SaveChanges();
+    }
+}
+</pre></div><br />And that&#39;s it! CompiledQueryReplicator is thread-safe, so you can use it in your multithreaded apps (eg. ASP.NET Forms/MVC) without fear.</div><div class="ClearBoth"></div>

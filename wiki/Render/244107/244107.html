@@ -1,0 +1,19 @@
+<div class="wikidoc"><h1>Time Utilities Tutorial</h1>This tutorial aims to teach you about the time utilities that the DigitallyCreated.Utilities.Bcl assembly has. It assumes you are familiar with C#.<br />
+<h2>TimeSpan to Ago String (eg &quot;2 minutes ago&quot;)</h2>Sometimes you want to show a TimeSpan to the user as a relative to now time string (an &quot;ago&quot; string). The ToAgoString() extension method off of TimeSpan is good for that.<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">new</span> TimeSpan(0,0,30).ToAgoString(); <span style="color:Green;">//30 seconds: &quot;just now&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(0,14,0).ToAgoString(); <span style="color:Green;">//14 minutes: &quot;14 minutes ago&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(1,0,0).ToAgoString(); <span style="color:Green;">//14 minutes: &quot;14 minutes ago&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(1,0,0).ToAgoString(); <span style="color:Green;">//1 hour: &quot;1 hour ago&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(1,0,0,0).ToAgoString(); <span style="color:Green;">//1 day: &quot;yesterday&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(5,0,0,0).ToAgoString(); <span style="color:Green;">//5 days: &quot;5 days ago&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(8,0,0,0).ToAgoString(); <span style="color:Green;">//8 days: &quot;1 week ago&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(70,0,0,0).ToAgoString(); <span style="color:Green;">//70 days: &quot;2 months ago&quot;</span>
+<span style="color:Blue;">new</span> TimeSpan(450,0,0,0).ToAgoString(); <span style="color:Green;">//450 days: &quot;1 year ago&quot;</span>
+</pre></div><br />Obviously as the time span increases, the textual representation gets more and more inaccurate. However, this is acceptable, as generally using this representation means you don&#39;t really care about accuracy anyway.<br />
+<h2>Converting between Olson Time Zones (TzIds) and Windows system TimeZoneInfos</h2>Sometimes you may need the ability to take a TzId string (eg Australia/Melbourne) and get a <a href="http://msdn.microsoft.com/en-us/library/system.timezoneinfo.aspx">TimeZoneInfo</a> for that TzId. Unfortunately, the Windows system timezones are nowhere near as comprehensive as the Olson database, so the converter that DigitallyCreated.Utilities.Bcl has is on a best effort basis. There is an <a href="http://dcutilities.codeplex.com/sourcecontrol/network/Show?projectName=dcutilities&amp;changeSetId=42109#707878">XML mapping file</a> that is embedded into the assembly that contains ~140 mappings. You can add to this XML if you require others and recompile the project yourself.<br /><br />To use the converter facility, you simply call <span class="codeInline">TimeUtils.GetTimeZoneInfoForTzId(tzId)</span>.<br /><br /><div style="color:Black;background-color:White;"><pre>
+TimeZoneInfo tzi = TimeUtils.GetTimeZoneInfoForTzId(<span style="color:#A31515;">&quot;Australia/Melbourne&quot;</span>);
+</pre></div><br />You can convert back the other way too, even where multiple TzIds cover the one Windows timezone:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Green;">//Where tzi is a TimeZoneInfo object</span>
+<span style="color:Blue;">string</span> tzId = tzi.ToTzId();
+IEnumerable&lt;<span style="color:Blue;">string</span>&gt; tzIds = tzi.GetAllTzIds();
+</pre></div></div><div class="ClearBoth"></div>

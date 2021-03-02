@@ -1,0 +1,35 @@
+<div class="wikidoc"><h1>SafeUsingBlock and DisposableWrapper Tutorial</h1>This tutorial aims to teach you about the SafeUsingBlock and DisposableWrapper constructs that can be found in DigitallyCreated.Utilities.Bcl. It assumes you already know C#.<br />
+<h2>SafeUsingBlock</h2>The standard <a href="http://msdn.microsoft.com/en-us/library/yh598w02.aspx">C# using block</a> has the potential to silently swallow thrown exceptions; the SafeUsingBlock construct works similarly to a C# using block, but doesn&#39;t suffer from this flaw. The using block flaw and SafeUsingBlock is discussed in <a href="http://www.digitallycreated.net/Blog/51/c%23-using-blocks-can-swallow-exceptions">this blog post</a>.<br />
+<h2>DisposableWrapper</h2>The <span class="codeInline">DisposableWrapper&lt;T&gt;</span> class is a small utility that can wrap any object type in a class that is IDisposable. If the wrapped object is IDisposable itself, then when the wrapper is disposed, the wrapped object is too. But if the wrapped object is <i>not</i> IDisposable, then disposing the wrapper doesn&#39;t do anything.<br /><br />This is useful in cases where you have a reference to an interface which doesn&#39;t implement IDisposable, however, the underlying concrete class may or may not (depending on the implementation) implement IDisposable. You&#39;d like to use that interface inside a C# using block (or a SafeUsingBlock), but you can&#39;t unless you do a runtime type check and cast, which is messy. DisposableWrapper solves this problem. <br /><br />Imagine you had an <span class="codeInline">IWorldSaver</span> interface and two <span class="codeInline">IWorldSaver</span> implementations <span class="codeInline">WorldSaver</span> and <span class="codeInline">DisposableWorldSaver</span>:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">interface</span> IWorldSaver
+{
+    <span style="color:Blue;">void</span> SaveWorld();
+}
+
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> DisposableWorldSaver : IWorldSaver, IDisposable
+{
+    <span style="color:Blue;">public</span> <span style="color:Blue;">void</span> SaveWorld() { ... }
+    <span style="color:Blue;">public</span> <span style="color:Blue;">void</span> Dispose() { ... }
+}
+
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> ConcreteWorldSaver : IWorldSaver
+{
+    <span style="color:Blue;">public</span> <span style="color:Blue;">void</span> SaveWorld() { ... }
+}
+</pre></div><br />Then imagine you have a method that is called with a new IWorldSaver, constructed by some factory or dependency injection. That method knows that some IWorldSaver implementations are IDisposable and therefore wants to use a using block; so it uses a DisposableWrapper to do this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">void</span> SaveTheWorld(IWorldSaver worldSaver)
+{
+    <span style="color:Blue;">using</span> (DisposableWrapper&lt;IWorldSaver&gt; wrapper = DisposableWrapper.New(worldSaver))
+    {
+        wrapper.Object.SaveWorld();
+    }
+}
+</pre></div><br />If you want to use a SafeUsingBlock, the syntax is even nicer, as a special SafeUsingBlock method will unwrap the wrapper for you:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">void</span> SaveTheWorld(IWorldSaver worldSaver)
+{
+    DisposableWrapper.SafeUsingBlock(worldSaver, ws =&gt;
+    {
+        ws.SaveWorld();
+    });
+}
+</pre></div><br />Of course, this is a simplistic and contrived example. A real-world place where you need a DisposableWrapper is where you use a WCF client through its interface. The interface doesn&#39;t implement IDisposable, but the underlying WCF client class does. DisposableWrapper can help you there.</div><div class="ClearBoth"></div>

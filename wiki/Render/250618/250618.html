@@ -1,0 +1,84 @@
+<div class="wikidoc"><h1>Basic WCF Client Injection Tutorial</h1>This tutorial aims to illustrate the usage of the WCF Client Injection extension to <a href="http://unity.codeplex.com/">Unity 1.2</a> that can be found in the DigitallyCreated.Utilities.Unity assembly. It expects you to know C#, WCF and Unity.<br /><br />The purpose of the WCF Client Injection extension to Unity is to allow you to easily get Unity to inject a WCF proxy when you ask for a concrete instance of the service interface. For example, if you had the following interface...<br /><br /><div style="color:Black;background-color:White;"><pre>
+[ServiceContract]
+<span style="color:Blue;">public</span> <span style="color:Blue;">interface</span> IMyService
+{
+    [OperationContract]
+    <span style="color:Blue;">int</span> GetRandomNumber(<span style="color:Blue;">int</span> maxLimit);
+}
+</pre></div><br />...you could get Unity to inject a WCF proxy to the WCF service that runs a service by that contract by simply going:<br /><br /><div style="color:Black;background-color:White;"><pre>
+IMyService myService = myUnityContainer.Resolve&lt;IMyService&gt;();
+</pre></div><br />And the beauty is that you could then get Unity to inject any other concrete class that implements IMyService there too, just by changing the configuration. So maybe that same Resolve call above would return this concrete class instead of a WCF proxy:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> MyService : IMyService
+{
+    <span style="color:Blue;">public</span> <span style="color:Blue;">int</span> GetRandomNumber(<span style="color:Blue;">int</span> maxLimit)
+    {
+        Random random = <span style="color:Blue;">new</span> Random();
+        <span style="color:Blue;">return</span> random.Next(maxLimit);
+    }
+}
+</pre></div><br />So how do we set this WCF client injection up to happen in Unity? <br />
+<h2>XML Configuration</h2>The best, easiest and most configurable way to set up WCF proxy injection is a little configuration in your Unity XML configuration:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">unity</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">containers</span><span style="color:Blue;">&gt;</span>
+
+        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">container</span><span style="color:Blue;">&gt;</span>
+
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">extensions</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;</span><span style="color:#A31515;">add</span> <span style="color:Red;">type</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">DigitallyCreated.Utilities.Unity.WcfProxyContainerExtension, DigitallyCreated.Utilities.Unity</span><span style="color:Black;">&quot;</span> <span style="color:Blue;">/&gt;</span>
+            <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">extensions</span><span style="color:Blue;">&gt;</span>
+
+            <span style="color:Blue;">&lt;</span><span style="color:#A31515;">extensionConfig</span><span style="color:Blue;">&gt;</span>
+
+                <span style="color:Blue;">&lt;</span><span style="color:#A31515;">add</span> <span style="color:Red;">name</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">WcfProxyContainerExtensionConfig</span><span style="color:Black;">&quot;</span>
+                     <span style="color:Red;">type</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">DigitallyCreated.Utilities.Unity.Configuration.WcfProxyExtensionConfigurationElement, DigitallyCreated.Utilities.Unity</span><span style="color:Black;">&quot;</span><span style="color:Blue;">&gt;</span>
+                    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">serviceInterfaces</span><span style="color:Blue;">&gt;</span>
+
+                        <span style="color:Blue;">&lt;</span><span style="color:#A31515;">serviceInterface</span> <span style="color:Red;">type</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">MyServices.IMyService, MyServicesAssembly</span><span style="color:Black;">&quot;</span>
+                                          <span style="color:Red;">endpointConfiguration</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">MyServiceEndpoint</span><span style="color:Black;">&quot;</span> <span style="color:Blue;">/&gt;</span>
+
+                    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">serviceInterfaces</span><span style="color:Blue;">&gt;</span>
+                <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">add</span><span style="color:Blue;">&gt;</span>
+
+            <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">extensionConfig</span><span style="color:Blue;">&gt;</span>
+        <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">container</span><span style="color:Blue;">&gt;</span>
+
+    <span style="color:Blue;">&lt;/</span><span style="color:#A31515;">containers</span><span style="color:Blue;">&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">unity</span><span style="color:Blue;">&gt;</span>
+</pre></div><br />Let&#39;s step through that blast of XML piece by piece. In the <span class="codeInline">extensions</span> element we&#39;re telling Unity about this extension to its default functionality. Then, in <span class="codeInline">extensionConfig</span> (which is where Unity lets extensions configure themselves) we&#39;re declaring a new configuration with the <span class="codeInline">add</span> tag. The name specified there is arbitrary. The type specified is the .NET class that the .NET Configuration system (<a href="http://msdn.microsoft.com/en-us/library/system.configuration.aspx">System.Configuration</a>) will use to deserialize the configuration (in this case, the extension&#39;s class). <br />The <span class="codeInline">serviceInterfaces</span> element inside the <span class="codeInline">add</span> gives us a place to start declaring our service interfaces (using <span class="codeInline">serviceInterface</span> elements). For this example, we&#39;re declaring that we want Unity to give us a WCF proxy when we ask for the IMyService interface. We also say that we want that service client proxy class to be configured with the settings defined in the &quot;MyServiceEndpoint&quot; configuration that we&#39;ve defined elsewhere in our XML configuration (a standard part of WCF service client configuration; done inside the familiar <span class="codeInline">system.ServiceModel</span> tag).<br /><br />If you&#39;d like to be able to register the WCF interface with Unity with a certain name so that you can do this...<br /><br /><div style="color:Black;background-color:White;"><pre>
+IMyService myService = myUnityContainer.Resolve&lt;IMyService&gt;(<span style="color:#A31515;">&quot;MyMappingName&quot;</span>);
+</pre></div><br />... you can. Simply change the <span class="codeInline">serviceInterface</span> declaration to be this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">serviceInterface</span> <span style="color:Red;">type</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">MyServices.IMyService, MyServicesAssembly</span><span style="color:Black;">&quot;</span>
+                  <span style="color:Red;">name</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">MyMappingName</span><span style="color:Black;">&quot;</span>
+                  <span style="color:Red;">endpointConfiguration</span><span style="color:Blue;">=</span><span style="color:Black;">&quot;</span><span style="color:Blue;">MyServiceEndpoint</span><span style="color:Black;">&quot;</span> <span style="color:Blue;">/&gt;</span>
+</pre></div><br />Note the inclusion of the <span class="codeInline">name</span> attribute.<br />
+<h2>Gotchas</h2>WCF clients are IDisposable and should disposed when you&#39;re finished with them. But if Unity just gives you an IMyServiceInterface, how are you to know whether it&#39;s a WCF service client, or something else (you&#39;re not supposed to know, this is dependency injection). The easiest way to deal with this is to use some smart disposer code like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Gray;">///</span> <span style="color:Gray;">&lt;summary&gt;</span>
+<span style="color:Gray;">///</span><span style="color:Green;"> The SmartDisposer class is a utility class that contains a method that implements</span>
+<span style="color:Gray;">///</span><span style="color:Green;"> disposing functionality</span>
+<span style="color:Gray;">///</span> <span style="color:Gray;">&lt;/summary&gt;</span>
+<span style="color:Blue;">public</span> <span style="color:Blue;">static</span> <span style="color:Blue;">class</span> SmartDisposer
+{
+    <span style="color:Gray;">///</span> <span style="color:Gray;">&lt;summary&gt;</span>
+    <span style="color:Gray;">///</span><span style="color:Green;"> This method disposes an object if it is &lt;see cref=&quot;IDisposable&quot;/&gt; and if it is safe to do so</span>
+    <span style="color:Gray;">///</span> <span style="color:Gray;">&lt;/summary&gt;</span>
+    <span style="color:Gray;">///</span> <span style="color:Gray;">&lt;remarks&gt;</span>
+    <span style="color:Gray;">///</span><span style="color:Green;"> The method will not dispose the object if it is a WCF client that is faulted, since that</span>
+    <span style="color:Gray;">///</span><span style="color:Green;"> will cause an exception to be thrown.</span>
+    <span style="color:Gray;">///</span> <span style="color:Gray;">&lt;/remarks&gt;</span>
+    <span style="color:Gray;">///</span> <span style="color:Gray;">&lt;param name=&quot;obj&quot;&gt;</span><span style="color:Green;">The object to dispose&lt;/param&gt;</span>
+    <span style="color:Blue;">public</span> <span style="color:Blue;">static</span> <span style="color:Blue;">void</span> Dispose(<span style="color:Blue;">object</span> obj)
+    {
+        IDisposable disposable = obj <span style="color:Blue;">as</span> IDisposable;
+        <span style="color:Blue;">if</span> (disposable != <span style="color:Blue;">null</span>)
+        {
+            <span style="color:Green;">//If its a WCF client, don&#39;t try to dispose of it if its faulted or else you&#39;ll cause</span>
+            <span style="color:Green;">//an exception that&#39;ll suppress the display of exception that caused the fault in the </span>
+            <span style="color:Green;">//first place</span>
+            <span style="color:Blue;">if</span> (obj <span style="color:Blue;">is</span> ICommunicationObject &amp;&amp; ((ICommunicationObject)obj).State == CommunicationState.Faulted)
+                <span style="color:Blue;">return</span>;
+
+            disposable.Dispose();
+        }
+    }
+}
+</pre></div><br />So when you&#39;re done with your IMyService, run SmartDisposer.Dispose on it. If it&#39;s a WCF client, it&#39;ll be disposed safely, if not, it won&#39;t be disposed at all, which keeps the rest of your code oblivious to what IMyService really is.</div><div class="ClearBoth"></div>

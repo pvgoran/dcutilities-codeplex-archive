@@ -1,0 +1,26 @@
+<div class="wikidoc"><h1>Permanently Redirect ActionResults Tutorial</h1>This tutorial illustrates the use of the Permanently Redirect ActionResults that can be found in the DigitallyCreated.Utilities.Mvc assembly. This tutorial assumes you know C# and ASP.NET MVC.<br /><br />ASP.NET MVC ships with the <a href="http://msdn.microsoft.com/en-us/library/system.web.mvc.redirectresult.aspx">RedirectResult</a> and the <a href="http://msdn.microsoft.com/en-us/library/system.web.mvc.redirecttorouteresult.aspx">RedirectToRouteResult</a>, which uses an HTTP status code of 302 (Found) to redirect user to another page. DigitallyCreated.Utilities.Mvc provides two new ActionResults, the PermanentRedirectResult and the PermanentRedirectToRouteResult, which perform the same functionality as the ASP.NET MVC ActionResults, except instead of using the status code of 302, they use the status code of 301 (Moved Permanently).<br /><br />Extension methods to Controller (found in the PermanentRedirectResultExtensions class) have been provided that mimic the usage of the normal <a href="http://msdn.microsoft.com/en-us/library/system.web.mvc.controller.redirect.aspx">Redirect</a>, <a href="http://msdn.microsoft.com/en-us/library/system.web.mvc.controller.redirecttoaction.aspx">RedirectToAction</a> and <a href="http://msdn.microsoft.com/en-us/library/system.web.mvc.controller.redirecttoroute.aspx">RedirectToRoute</a>. These methods are <span class="codeInline">PermanentlyRedirect</span>, <span class="codeInline">PermanentlyRedirectToAction</span>, and <span class="codeInline">PermanentlyRedirectToRoute</span>. Here is a usage example:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Gray;">///</span> <span style="color:Gray;">&lt;summary&gt;</span>
+<span style="color:Gray;">///</span><span style="color:Green;"> Action method that returns a &lt;see cref=&quot;PermanentRedirectResult&quot;/&gt; that redirects to</span>
+<span style="color:Gray;">///</span><span style="color:Green;"> the actual blog post (used to support old permalinks to blogs)</span>
+<span style="color:Gray;">///</span> <span style="color:Gray;">&lt;/summary&gt;</span>
+<span style="color:Gray;">///</span> <span style="color:Gray;">&lt;param name=&quot;id&quot;&gt;</span><span style="color:Green;">The ID of the blog post&lt;/param&gt;</span>
+<span style="color:Gray;">///</span> <span style="color:Gray;">&lt;returns&gt;</span><span style="color:Green;">The redirect result&lt;/returns&gt;</span>
+<span style="color:Blue;">public</span> ActionResult PermanentlyRedirectToBlog(<span style="color:Blue;">string</span> id)
+{
+    <span style="color:Blue;">int</span> intId;
+    <span style="color:Blue;">if</span> (Int32.TryParse(id, <span style="color:Blue;">out</span> intId) == <span style="color:Blue;">false</span>)
+        <span style="color:Blue;">throw</span> <span style="color:Blue;">new</span> HttpException(404, <span style="color:#A31515;">&quot;Page not found&quot;</span>);
+
+    BlogPost post;
+    <span style="color:Blue;">try</span>
+    {
+        post = _BlogManager.GetPost(intId, <span style="color:Blue;">false</span>);
+    }
+    <span style="color:Blue;">catch</span> (NotFoundException)
+    {
+        <span style="color:Blue;">throw</span> <span style="color:Blue;">new</span> HttpException(404, <span style="color:#A31515;">&quot;Page not found&quot;</span>);
+    }
+
+    <span style="color:Blue;">return</span> <span style="color:Blue;">this</span>.PermanentlyRedirectToAction(<span style="color:#A31515;">&quot;View&quot;</span>, <span style="color:Blue;">new</span> {id, slug = post.Slug});
+}
+</pre></div><br />Note the use of <span class="codeInline">this.</span> when calling PermanentlyRedirectToAction. This is to get access to the extension method, something that is not necessary when using the normal RedirectToAction method, since it is declared as a method on Controller and is not an extension method.</div><div class="ClearBoth"></div>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://www.digitallycreated.net/Schemas/DCUtilities/Linq/Sorter" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.digitallycreated.net/Schemas/DCUtilities/Linq/Sorter">
+    <complexType name="Sorter">
+    	<sequence>
+    		<element name="OrderedSortProperties"
+    			type="tns:PropertySelectorSortList">
+    		</element>
+    		<element name="TranslationDictionary"
+    			type="tns:FakeNameToPropertySelectorMap">
+    		</element>
+
+    	</sequence>
+    	<attribute name="SortObjectType" type="string"></attribute>
+    	<attribute name="Prefix" type="string"></attribute>
+    </complexType>
+
+    <complexType name="FakeNameToPropertySelectorMap">
+    	<sequence>
+    		<element name="Pair" maxOccurs="unbounded"
+    			minOccurs="0">
+    			<complexType>
+    				<sequence>
+    					<element name="FakeName" type="string" maxOccurs="1" minOccurs="1"></element>
+    					<element name="PropertySelector" type="string" maxOccurs="1" minOccurs="1"></element>
+    				</sequence>
+    			</complexType>
+    		</element>
+    	</sequence>
+    </complexType>
+    
+
+    <complexType name="PropertySelectorSortList">
+    	<sequence>
+    		<element name="SortItem" maxOccurs="unbounded"
+    			minOccurs="0">
+    			<complexType>
+    				<sequence>
+    					<element name="PropertySelector" type="string"></element>
+    					<element name="SortAsc" type="boolean"></element>
+    				</sequence>
+    			</complexType>
+    		</element>
+    	</sequence>
+    </complexType>
+</schema>

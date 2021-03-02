@@ -1,0 +1,34 @@
+[
+  {
+    "Id": "1123069",
+    "ThreadId": "468546",
+    "Html": "The C# mutex class works across processes. The FifoMutex implementation on this project does not seem to work across process (or at least the constructor is missing the parameter)\r<br />\n<br />\nIs there any FifoMutex that works across processes?<br />\n",
+    "PostedDate": "2013-11-13T10:41:14.663-08:00",
+    "UserRole": null,
+    "MarkedAsAnswerDate": null
+  },
+  {
+    "Id": "1123070",
+    "ThreadId": "468546",
+    "Html": "I just saw the implementation. There is no way it can work across processes by locking objects.<br />\n",
+    "PostedDate": "2013-11-13T10:45:33.997-08:00",
+    "UserRole": null,
+    "MarkedAsAnswerDate": null
+  },
+  {
+    "Id": "1123684",
+    "ThreadId": "468546",
+    "Html": "It's not intended nor designed to work across processes, I'm afraid.<br />\n",
+    "PostedDate": "2013-11-14T14:22:32.423-08:00",
+    "UserRole": null,
+    "MarkedAsAnswerDate": null
+  },
+  {
+    "Id": "1123709",
+    "ThreadId": "468546",
+    "Html": "Any idea where I could get a fifomutex that works across processes like the regular mutex?\r<br />\nI'm afraid I will have to develop one and I do not have the time for it<br />\n",
+    "PostedDate": "2013-11-14T15:41:07.493-08:00",
+    "UserRole": null,
+    "MarkedAsAnswerDate": null
+  }
+]

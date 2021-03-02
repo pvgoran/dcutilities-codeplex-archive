@@ -1,0 +1,18 @@
+To create a release:
+
+- Ensure all tests pass
+- Set the correct version numbers in the projects
+- Use Sandcastle and Sandcastle Help File Builder to create API documentation
+  - Ensure namespace documentation is up to date in SHFB
+- Commit the changes
+- Tag the release in SVN
+- Enable strong name signing of the assemblies
+- Compile the project in Release mode
+- Create zip archive in the following format
+  - API Documentation.chm
+  - \bin
+    - *.dll (not UnitTests.dll) 
+    - *.pdb
+    - *.xml
+  - Licence.txt
+- Remove strong name signing settings from project

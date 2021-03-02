@@ -1,0 +1,5 @@
+glob:obj
+glob:TestResults
+glob:bin
+glob:*.user
+glob:*.suo

@@ -1,0 +1,27 @@
+<div class="wikidoc"><h1>PagedSortedViewModel with Auxiliary Data Model Tutorial</h1>This tutorial shows you how to use an auxiliary data model with a PagedSortedViewModel. The tutorial assumes you know C# and ASP.NET MVC, and you&#39;re familiar with the contents of the <a href="https://dcutilities.codeplex.com/wikipage?title=Basic%20Sorter%20Tutorial&referringTitle=PagedSortedViewModel%20with%20Auxiliary%20Data%20Model%20Tutorial">Basic Sorter and Paging Tutorial</a>.<br /><br />It&#39;s quite a common occurrence that you&#39;d need to pass extra data to the View alongside the sortable data that you&#39;re going to put in your sortable table. The <span class="codeInline">PagedSortedViewModel&lt;T, TAuxModel&gt;</span> class lets you do this.<br /><br />Imagine you wanted not only to show a sortable, pageable table of employees, but you also wanted to display some stats about them, for example:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> EmployeeStats
+{
+    <span style="color:Blue;">public</span> Employee TopEmployeeForMonth { <span style="color:Blue;">get</span>; <span style="color:Blue;">set</span>; }
+    <span style="color:Blue;">public</span> Employee TopEmployeeForYear { <span style="color:Blue;">get</span>; <span style="color:Blue;">set</span>; }
+}
+</pre></div><br />Your action method in the employee controller would now look like this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">public</span> ActionResult Manage(<span style="color:Blue;">int</span>? page, [ModelBinder(<span style="color:Blue;">typeof</span>(EmployeeSorterBinder))] Sorter&lt;Employee&gt; sort)
+{
+    <span style="color:Blue;">int</span> totalPages = PagedDataHelper.GetTotalPages(_EmployeeManager.CountEmployees(), PAGE_SIZE);
+    page = PagedDataHelper.ValidatePage(page, totalPages);
+
+    IList&lt;Employee&gt; employees = _EmployeeManager.GetEmployees(page.Value, sort);
+    EmployeeStats stats = _EmployeeManager.GetEmployeeStats();
+
+    <span style="color:Blue;">return</span> View(<span style="color:Blue;">new</span> PagedSortedViewModel&lt;Employee, EmployeeStats&gt;(employees, sort, page.Value, totalPages, stats));
+}
+</pre></div><br />Notice how we&#39;re now using a PagedSortedViewModel that has a second type parameter (TAuxModel) and an extra constructor parameter? This is the other PagedSortedViewModel type that you can use that allows you to have that extra data alongside the paged/sorted data.<br /><br />In the View we&#39;ll need to change the Page directive to reflect this:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="background-color:Yellow;">&lt;%</span><span style="color:Blue;">@</span> <span style="color:#A31515;">Page</span> <span style="color:Red;">Language</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;C#&quot;</span> <span style="color:Red;">MasterPageFile</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;~/Views/Shared/Site.Master&quot;</span> <span style="color:Red;">Inherits</span><span style="color:Blue;">=</span><span style="color:Blue;">&quot;System.Web.Mvc.ViewPage&lt;PagedSortedViewModel&lt;Employee, EmployeeStats&gt;&gt;&quot;</span> <span style="background-color:Yellow;">%&gt;</span>
+</pre></div><br />Now we can access that auxiliary data in the View via the <span class="codeInline">Model.AuxModel</span> property like so:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">&lt;</span><span style="color:#A31515;">p</span><span style="color:Blue;">&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">strong</span><span style="color:Blue;">&gt;</span>Employee of the Year:<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">strong</span><span style="color:Blue;">&gt;</span>
+    <span style="background-color:Yellow;">&lt;%=</span> Html.Encode(String.Format(<span style="color:#A31515;">&quot;{0} {1}&quot;</span>, Model.AuxModel.TopEmployeeForYear.FirstName, Model.AuxModel.TopEmployeeForYear.LastName)) <span style="background-color:Yellow;">%&gt;</span>
+    <span style="color:Blue;">&lt;</span><span style="color:#A31515;">strong</span><span style="color:Blue;">&gt;</span>Employee of the Month:<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">strong</span><span style="color:Blue;">&gt;</span>
+    <span style="background-color:Yellow;">&lt;%=</span> Html.Encode(String.Format(<span style="color:#A31515;">&quot;{0} {1}&quot;</span>, Model.AuxModel.TopEmployeeForMonth.FirstName, Model.AuxModel.TopEmployeeForMonth.LastName)) <span style="background-color:Yellow;">%&gt;</span>
+<span style="color:Blue;">&lt;/</span><span style="color:#A31515;">p</span><span style="color:Blue;">&gt;</span>
+</pre></div></div><div class="ClearBoth"></div>

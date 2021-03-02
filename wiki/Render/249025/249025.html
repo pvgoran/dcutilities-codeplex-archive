@@ -1,0 +1,59 @@
+<div class="wikidoc"><h1>ReaderWriterLock Tutorial and Implementation Discussion</h1>This page illustrates the purpose and basic use of a ReaderWriterLock, and then discusses its specific implementation details. ReaderWriterLock can be found in the DigitallyCreated.Utilities.Concurrency assembly.<br />
+<h2>Tutorial</h2>In the classical “reader-writer” thread synchronisation problem one has some data structure that multiple threads read and write to concurrently. One doesn’t mind if multiple threads are reading the data concurrently, because they’re not changing anything so no concurrency issues can occur. However, when threads need to write to the data structure, they need to bar any other thread from reading from the structure until they are complete. If they didn’t, the reader threads could possibly read the data while it is in some transient half-changed state.<br /><br />A solution to this problem is the reader/writer lock. The reader/writer lock allows multiple threads to read concurrently, but as soon as a thread needs to write, all other threads except the writer are denied access (or more accurately, have to wait before they are allowed access) until the writer thread is done.<br /><br />The ReaderWriterLock exposes a few ways you can acquire and release read/write locks. You can use AcquireRead or AcquireWrite to acquire a read or write lock, then release the acquired lock with ReleaseRead or ReleaseWrite:<br /><br /><div style="color:Black;background-color:White;"><pre>
+rwLock.AcquireRead(); <span style="color:Green;">//rwLock is an instance of ReaderWriterLock</span>
+<span style="color:Blue;">try</span> {
+    <span style="color:Green;">//Read some data</span>
+} 
+<span style="color:Blue;">finally</span>
+{
+    rwLock.ReleaseRead();
+}
+
+rwLock.AcquireWrite();
+<span style="color:Blue;">try</span> {
+    <span style="color:Green;">//Write some data</span>
+} 
+<span style="color:Blue;">finally</span>
+{
+    rwLock.ReleaseWrite();
+}
+</pre></div><br />Alternatively, and more conveniently, you can use a using block to automatically guarantee the release of the lock:<br /><br /><div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">using</span> (rwLock.AcquireDisposableRead()) <span style="color:Green;">//rwLock is an instance of ReaderWriterLock</span>
+{
+    <span style="color:Green;">//Read some data</span>
+}
+
+<span style="color:Blue;">using</span> (rwLock.AcquireDisposableWrite())
+{
+    <span style="color:Green;">//Read some data</span>
+}
+</pre></div><br />ReaderWriterLock supports forcibly acquiring read and write locks in an interrupt-free manner. This means that one is able to acquire a read or write lock without the possibility of an interrupt occurring. The interrupts are not swallowed, simply delayed to occur after the acquiring of the lock at the next point interrupts are possible in your code. The methods to do this are the Force methods:<br /><br /><div style="color:Black;background-color:White;"><pre>
+rwLock.ForceAcquireRead(); <span style="color:Green;">//rwLock is an instance of ReaderWriterLock</span>
+<span style="color:Blue;">try</span> {
+    <span style="color:Green;">//Read some data</span>
+} 
+<span style="color:Blue;">finally</span>
+{
+    rwLock.ReleaseRead();
+}
+
+rwLock.ForceAcquireWrite();
+<span style="color:Blue;">try</span> {
+    <span style="color:Green;">//Write some data</span>
+} 
+<span style="color:Blue;">finally</span>
+{
+    rwLock.ReleaseWrite();
+}
+
+<span style="color:Blue;">using</span> (rwLock.ForceAcquireDisposableRead())
+{
+    <span style="color:Green;">//Read some data</span>
+}
+
+<span style="color:Blue;">using</span> (rwLock.ForceAcquireDisposableWrite())
+{
+    <span style="color:Green;">//Read some data</span>
+}
+</pre></div><br />Note that the Release methods do not have Force variants because they already guarantee that no ThreadInterruptedException will occur within them.<br />
+<h2>Implementation Discussion</h2>Concurrency utilities are hard to implement correctly. These discussions illustrate how these utilities have been implemented and how they work, which should convince you that they&#39;re stable. Of course, if you see something I&#39;ve missed, please do post an issue on the issue tracker.<br /><br />This implementation of ReaderWriterLock can deal with interrupts and ensures that if they were to occur within the ReaderWriterLock, they would not corrupt internal state. The implementation also allows threads to request the acquiring or releasing of read/write locks to occur without an interruption (“forced” acquiring/releasing). This implementation does not support thread abortion.<br /><br />See <a href="http://dcutilities.codeplex.com/sourcecontrol/network/Show?projectName=dcutilities&amp;changeSetId=42525#707837">here</a> for the code for ReaderWriterLock.<br /><br />The first thing that the AcquireRead method does is acquire and immediately release the _ReadersTurnstile. This turnstile exists so that writers can block readers from reading (as discussed later). The _ReadersTurnstile is ForceReleased so that an interrupt on release cannot cause the turnstile to remain locked forever. The method then acquires the _Lock so it can have safe access to the _NumReaders field. It checks to see whether there are any readers currently reading; if not, it acquires the _WriteLock, which blocks writers from writing. Subsequent readers do not acquire this lock, since it is a Mutex and they would be forced to wait. The method then increments _NumReaders to register its presence, and returns.<br />ForceAcquireRead simply calls AcquireRead inside a finally block, which prevents interruptions from occurring.<br /><br />ReleaseRead does the reverse: it acquires the _Lock, decrements _NumReaders and if it finds that it is the last reader to leave, it releases the _WriteLock, allowing writers to write. Note that this is done inside a finally block in order to ensure no interruptions could occur. This approach is taken because releases do not ever wait (so delaying the interrupt to later is not an issue), and almost always must succeed (or else a lock would never be released).<br /><br />AcquireWrite first acquires _WritersTurnstile and then acquires _ReaderTurnstile, which blocks any readers from trying to acquire read rights. Acquiring _WritersTurnstile means that any other writer is blocked at that turnstile until it is released, which allows readers to queue on the _ReadersTurnstile while a writer writes, but prevents a writer from getting onto that queue (note there is an actual queue used here, since the _ReadersTurnstile is a FIFO mutex). The reason this is done is for performance reasons; because readers can read concurrently, if they are allowed to queue and have the first go at whatever resource this lock is protecting, potentially a lot of readers can get through before the next writer comes in. This gives a slight priority to readers, but since they can run concurrently, the net result is that more threads get a go at the resource. If this wasn’t done in the scenario where a writer is writing and then two readers come into wait, then a writer, then two readers, the two readers would get to read, the writer would write, then the two readers would read. With this solution, what would happen is all four readers would read at the same time, and then the writer would write, giving a net performance boost.<br /><br />Once the writer has acquired the _WritersTurnstile and the _ReadersTurnstile, it tries to acquire the _WriteLock. If any readers are currently reading, this lock will have been acquired, and the writers will block here. However, when they are done (and since we hold _ReadersTurnstile, no more can start reading while we wait), we will stop blocking and return from the method.<br /><br />Note that the acquiring of the _ReadersTurnstile is wrapped in a catch block for ThreadInterruptedExceptions. This ensures that if an interruption was to occur, the _WritersTurnstile would be (force) released, thereby rolling back the AcquireWrite operation. The same idea is applied to acquiring the _WriteLock: the _ReadersTurnstile and the _WritersTurnstile are both (force) released if a ThreadInterruptedException occurs.<br /><br />ReleaseWrite does the reverse: it releases the _WriteLock, then the _ReadersTurnstile, then the _WritersTurnstile. Note that the use of FifoMutexes means that when we release the _ReadersTurnstile and the _WritersTurnstile, the writer is unable to wake up more quickly than the readers and nip in and take the _ReadersTurnstile, thereby nullifying the effect of the _WritersTurnstile. The FIFO behaviour of the mutex ensures that the readers go first.<br />All these releases are wrapped in a finally block to ensure the operation will succeed without an interruption; the reasoning behind this is the same as ReleaseRead.<br /><br />The AcquireDisposableRead and AcquireDisposableWrite simply wrap calls to AcquireRead and AcquireWrite in an IDisposable-implementing class (LockDisposable). When LockDisposable is disposed by this using block it ought to be used in, it calls the appropriate Release method. The Force variants simply wrap the lock acquiring in a finally block to suppress interruptions.</div><div class="ClearBoth"></div>
